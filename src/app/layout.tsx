@@ -1,20 +1,22 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "@/app/styles/globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import '@/app/styles/globals.css';
+import { AppLayout } from '@/widgets/AppLayout';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Easy Dash",
-  description: "A modern dashboard built with Next.js and Feature Sliced Design",
+  title: 'Easy Dash',
+  description:
+    'A modern dashboard built with Next.js and Feature Sliced Design',
 };
 
 export default function RootLayout({
@@ -24,11 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body 
+      <body
         className={`${geistSans.variable} ${geistMono.variable}`}
         suppressHydrationWarning={true}
       >
-        {children}
+        <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );

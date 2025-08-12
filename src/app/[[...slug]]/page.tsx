@@ -1,6 +1,14 @@
-import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getRouteComponent, getRouteMetadata } from '@/shared/lib/router';
+import { getRouteMetadata } from '@/shared/lib/router';
+import type { Metadata } from 'next';
+
+// Import all page components directly for SSR
+import { HomePage } from '@/pages-layer/HomePage';
+import { LoginPage } from '@/pages-layer/LoginPage';
+import { RegisterPage } from '@/pages-layer/RegisterPage';
+import { DashboardPage } from '@/pages-layer/DashboardPage';
+import { ProfilePage } from '@/pages-layer/ProfilePage';
+import { SettingsPage } from '@/pages-layer/SettingsPage';
 
 interface DynamicPageProps {
   params: {
@@ -8,19 +16,19 @@ interface DynamicPageProps {
   };
 }
 
-// Lazy component wrapper
-const LazyComponent = ({ component }: { component: () => Promise<{ default: React.ComponentType }> }) => {
-  const Component = React.lazy(component);
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Component />
-    </Suspense>
-  );
+// Map routes to components
+const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
+  '/': HomePage,
+  '/login': LoginPage,
+  '/register': RegisterPage,
+  '/dashboard': DashboardPage,
+  '/profile': ProfilePage,
+  '/settings': SettingsPage,
 };
 
 export function generateStaticParams() {
   return [
-    { slug: [] }, 
+    { slug: [] },
     { slug: ['login'] },
     { slug: ['register'] },
     { slug: ['dashboard'] },
@@ -29,31 +37,35 @@ export function generateStaticParams() {
   ];
 }
 
-export async function generateMetadata({ params }: DynamicPageProps) {
-  const path = params.slug ? `/${params.slug.join('/')}` : '/';
+export async function generateMetadata({
+  params,
+}: DynamicPageProps): Promise<Metadata> {
+  const { slug = [] } = await params;
+
+  const path = slug ? `/${slug.join('/')}` : '/';
   const metadata = getRouteMetadata(path);
-  
+
   if (!metadata) {
     return {
       title: 'Page Not Found',
     };
   }
-  
+
   return {
-    title: metadata.title,
+    title: `${metadata.title} - Easy Dash`,
     description: metadata.description,
   };
 }
 
-export default function DynamicPage({ params }: DynamicPageProps) {
-  const path = params.slug ? `/${params.slug.join('/')}` : '/';
-  const routeComponent = getRouteComponent(path);
-  
-  if (!routeComponent) {
+export default async function DynamicPage({ params }: DynamicPageProps) {
+  const { slug = [] } = await params;
+
+  const path = slug ? `/${slug.join('/')}` : '/';
+  const Component = ROUTE_COMPONENTS[path];
+
+  if (!Component) {
     notFound();
   }
-  
-  const metadata = getRouteMetadata(path);
-  
-  return <LazyComponent component={routeComponent} />;
+
+  return <Component />;
 }

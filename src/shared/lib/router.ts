@@ -8,10 +8,6 @@ export const getRouteMetadata = (path: string): RouteConfig | undefined => {
   return getRouteByPath(path);
 };
 
-export const getRouteComponent = (path: string): (() => Promise<{ default: React.ComponentType }>) | null => {
-  const route = getRouteByPath(path);
-  return route?.component || null;
-};
 
 export const isProtectedRoute = (path: string): boolean => {
   const route = getRouteByPath(path);

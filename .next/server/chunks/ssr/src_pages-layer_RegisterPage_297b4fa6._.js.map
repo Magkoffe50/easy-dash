@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/RegisterPage/RegisterPage.tsx"],"sourcesContent":["\"use client\";\n\nimport React from 'react';\n\nexport const RegisterPage: React.FC = () => {\n  return (\n    <div style={{ padding: '2rem', textAlign: 'center' }}>\n      <h1>Register Page</h1>\n      <p>This page is coming soon...</p>\n    </div>\n  );\n};\n"],"names":[],"mappings":";;;;AAAA;;AAIO,MAAM,eAAyB;IACpC,qBACE,8OAAC;QAAI,OAAO;YAAE,SAAS;YAAQ,WAAW;QAAS;;0BACjD,8OAAC;0BAAG;;;;;;0BACJ,8OAAC;0BAAE;;;;;;;;;;;;AAGT","debugId":null}},
+    {"offset": {"line": 43, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/RegisterPage/index.ts"],"sourcesContent":["export { RegisterPage } from './RegisterPage';\n"],"names":[],"mappings":";AAAA","debugId":null}}]
+}
