@@ -30,55 +30,37 @@ const ROUTES = {
         path: '/',
         title: 'Home',
         description: 'Welcome to Easy Dash',
-        requiresAuth: false,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/HomePage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.HomePage
-                }))
+        requiresAuth: false
     },
     LOGIN: {
         path: '/login',
         title: 'Login',
         description: 'Sign in to your account',
-        requiresAuth: false,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/LoginPage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.LoginPage
-                }))
+        requiresAuth: false
     },
     REGISTER: {
         path: '/register',
         title: 'Register',
         description: 'Create a new account',
-        requiresAuth: false,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/RegisterPage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.RegisterPage
-                }))
+        requiresAuth: false
     },
     DASHBOARD: {
         path: '/dashboard',
         title: 'Dashboard',
         description: 'Your dashboard overview',
-        requiresAuth: true,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/DashboardPage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.DashboardPage
-                }))
+        requiresAuth: true
     },
     PROFILE: {
         path: '/profile',
         title: 'Profile',
         description: 'Your profile settings',
-        requiresAuth: true,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/ProfilePage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.ProfilePage
-                }))
+        requiresAuth: true
     },
     SETTINGS: {
         path: '/settings',
         title: 'Settings',
         description: 'Application settings',
-        requiresAuth: true,
-        component: ()=>__turbopack_context__.r("[project]/src/pages-layer/SettingsPage/index.ts [app-rsc] (ecmascript, async loader)")(__turbopack_context__.i).then((module)=>({
-                    default: module.SettingsPage
-                }))
+        requiresAuth: true
     }
 };
 const API_ROUTES = {

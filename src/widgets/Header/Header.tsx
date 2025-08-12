@@ -1,62 +1,116 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import {
+  AccountCircle,
+  Brightness4,
+  Brightness7,
+  Menu as MenuIcon,
+} from '@mui/icons-material';
+import { useTheme } from '@/shared/ui/ThemeProvider';
 import { Button } from '@/shared/ui/Button';
 import { APP_CONFIG } from '@/shared/config';
 import { User } from '@/entities/user/model/types';
-import styles from './Header.module.css';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
   user?: User;
   onLogout?: () => void;
+  onLogin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onMenuToggle,
   user,
   onLogout,
+  onLogin,
 }) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { themeMode, toggleTheme } = useTheme();
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
-    <header className={styles.header}>
-      <div className={styles.left}>
-        <button
-          className={styles.menuButton}
+    <AppBar position="static">
+      <Toolbar>
+        <IconButton
+          edge="start"
+          color="inherit"
+          aria-label="menu"
           onClick={onMenuToggle}
-          aria-label="Toggle menu"
+          sx={{ mr: 2 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M3 12H21M3 6H21M3 18H21"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
+          <MenuIcon />
+        </IconButton>
 
-        <div className={styles.logo}>
-          <h1>{APP_CONFIG.name}</h1>
-        </div>
-      </div>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {APP_CONFIG.name}
+        </Typography>
 
-      <div className={styles.right}>
-        {user ? (
-          <div className={styles.userMenu}>
-            <span className={styles.userName}>{user.name}</span>
-            <Button variant="outline" size="sm" onClick={onLogout}>
-              Logout
-            </Button>
-          </div>
-        ) : (
-          <Link href="/login">
-            <Button variant="primary" size="sm">
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton color="inherit" onClick={toggleTheme} sx={{ mr: 1 }}>
+            {themeMode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+          </IconButton>
+
+          {user ? (
+            <>
+              <IconButton
+                size="large"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                {user.avatar ? (
+                  <Avatar src={user.avatar} alt={user.name} />
+                ) : (
+                  <AccountCircle />
+                )}
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={handleClose}>Profile</MenuItem>
+                <MenuItem onClick={handleClose}>My account</MenuItem>
+                <MenuItem onClick={onLogout}>Logout</MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button variant="contained" size="small" onClick={onLogin}>
               Sign In
             </Button>
-          </Link>
-        )}
-      </div>
-    </header>
+          )}
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };

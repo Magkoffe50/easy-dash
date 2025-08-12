@@ -1,11 +1,20 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Box,
+} from '@mui/material';
 import { getPublicRoutes, getProtectedRoutes } from '@/shared/config/routes';
 import { Button } from '@/shared/ui/Button';
-import styles from './Navigation.module.css';
+import { getNavigationIcon } from '@/shared/lib/navigationUtils';
 
 interface NavigationProps {
   isAuthenticated?: boolean;
@@ -17,44 +26,47 @@ export const Navigation: React.FC<NavigationProps> = ({
   onLogout,
 }) => {
   const pathname = usePathname();
-  
-  const navigationItems = isAuthenticated 
+
+  const navigationItems = isAuthenticated
     ? getProtectedRoutes()
     : getPublicRoutes();
 
   return (
-    <nav className={styles.navigation}>
-      <div className={styles.navItems}>
+    <Box sx={{ width: 240, p: 2 }}>
+      <List>
         {navigationItems.map((route) => (
-          <Link
-            key={route.path}
-            href={route.path}
-            className={`${styles.navLink} ${
-              pathname === route.path ? styles.active : ''
-            }`}
-          >
-            {route.title}
-          </Link>
+          <ListItem key={route.path} disablePadding>
+            <ListItemButton
+              component={Link}
+              href={route.path}
+              selected={pathname === route.path}
+              sx={{
+                borderRadius: 1,
+                mb: 0.5,
+              }}
+            >
+              <ListItemIcon>{getNavigationIcon(route.path)}</ListItemIcon>
+              <ListItemText primary={route.title} />
+            </ListItemButton>
+          </ListItem>
         ))}
-      </div>
-      
-      <div className={styles.authSection}>
+      </List>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Box sx={{ p: 1 }}>
         {isAuthenticated ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLogout}
-          >
+          <Button variant="outlined" size="small" onClick={onLogout} fullWidth>
             Logout
           </Button>
         ) : (
-          <Link href="/login">
-            <Button variant="primary" size="sm">
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <Button variant="contained" size="small" fullWidth>
               Sign In
             </Button>
           </Link>
         )}
-      </div>
-    </nav>
+      </Box>
+    </Box>
   );
 };

@@ -1,42 +1,48 @@
-"use client";
+'use client';
 
 import React from 'react';
-import styles from './Button.module.css';
+import {
+  Button as MuiButton,
+  ButtonProps as MuiButtonProps,
+} from '@mui/material';
 
-interface ButtonProps {
+interface ButtonProps extends Omit<MuiButtonProps, 'variant' | 'size'> {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
-  className?: string;
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'outlined'
+    | 'contained'
+    | 'text';
+  size?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
 }
 
 export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
   size = 'md',
-  onClick,
-  disabled = false,
-  type = 'button',
-  className = '',
+  ...props
 }) => {
-  const buttonClasses = [
-    styles.button,
-    styles[variant],
-    styles[size],
-    className
-  ].filter(Boolean).join(' ');
+  const muiVariant =
+    variant === 'outline' || variant === 'outlined'
+      ? 'outlined'
+      : variant === 'contained'
+      ? 'contained'
+      : variant === 'text'
+      ? 'text'
+      : 'contained';
+  const muiSize =
+    size === 'sm' || size === 'small'
+      ? 'small'
+      : size === 'lg' || size === 'large'
+      ? 'large'
+      : 'medium';
+  const muiColor = variant === 'secondary' ? 'secondary' : 'primary';
 
   return (
-    <button
-      type={type}
-      className={buttonClasses}
-      onClick={onClick}
-      disabled={disabled}
-    >
+    <MuiButton variant={muiVariant} size={muiSize} color={muiColor} {...props}>
       {children}
-    </button>
+    </MuiButton>
   );
 };

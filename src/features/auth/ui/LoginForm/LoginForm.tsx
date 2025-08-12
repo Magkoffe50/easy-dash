@@ -1,11 +1,17 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
-import { Card } from '@/shared/ui/Card';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Alert,
+  Link as MuiLink,
+} from '@mui/material';
 import { LoginCredentials } from '../../model/types';
-import styles from './LoginForm.module.css';
 
 interface LoginFormProps {
   onSubmit: (credentials: LoginCredentials) => void;
@@ -28,68 +34,80 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof LoginCredentials) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: e.target.value,
-    }));
-  };
+  const handleChange =
+    (field: keyof LoginCredentials) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
+    };
 
   return (
-    <Card className={styles.loginForm} padding="lg">
-      <h2 className={styles.title}>Welcome Back</h2>
-      <p className={styles.subtitle}>Sign in to your account</p>
-      
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.field}>
-          <Input
-            type="email"
-            placeholder="Email address"
-            value={formData.email}
-            onChange={handleChange('email')}
-            required
-            size="lg"
-          />
-        </div>
-        
-        <div className={styles.field}>
-          <Input
-            type="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange('password')}
-            required
-            size="lg"
-          />
-        </div>
-        
-        {error && (
-          <div className={styles.error}>
-            {error}
-          </div>
-        )}
-        
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          disabled={isLoading}
-          className={styles.submitButton}
+    <Card sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
+      <CardContent sx={{ p: 4 }}>
+        <Typography variant="h4" component="h2" gutterBottom align="center">
+          Welcome Back
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          align="center"
+          gutterBottom
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
-        </Button>
-      </form>
-      
-      <div className={styles.footer}>
-        <p>
-          Don&apos;t have an account?{' '}
-          <a href="/register" className={styles.link}>
-            Sign up
-          </a>
-        </p>
-      </div>
+          Sign in to your account
+        </Typography>
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            <Input
+              type="email"
+              label="Email address"
+              value={formData.email}
+              onChange={handleChange('email')}
+              required
+              size="lg"
+            />
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Input
+              type="password"
+              label="Password"
+              value={formData.password}
+              onChange={handleChange('password')}
+              required
+              size="lg"
+            />
+          </Box>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={isLoading}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </Box>
+
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="body2">
+            Don&apos;t have an account?{' '}
+            <MuiLink href="/register" underline="hover">
+              Sign up
+            </MuiLink>
+          </Typography>
+        </Box>
+      </CardContent>
     </Card>
   );
 };

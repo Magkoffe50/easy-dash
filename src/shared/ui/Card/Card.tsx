@@ -1,29 +1,25 @@
 import React from 'react';
-import styles from './Card.module.css';
+import {
+  Card as MuiCard,
+  CardProps as MuiCardProps,
+  CardContent,
+} from '@mui/material';
 
-interface CardProps {
+interface CardProps extends Omit<MuiCardProps, 'children'> {
   children: React.ReactNode;
-  className?: string;
   padding?: 'sm' | 'md' | 'lg';
-  shadow?: 'sm' | 'md' | 'lg';
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
-  className = '',
   padding = 'md',
-  shadow = 'md',
+  ...props
 }) => {
-  const cardClasses = [
-    styles.card,
-    styles[padding],
-    styles[`shadow-${shadow}`],
-    className
-  ].filter(Boolean).join(' ');
+  const paddingValue = padding === 'sm' ? 1 : padding === 'lg' ? 3 : 2;
 
   return (
-    <div className={cardClasses}>
-      {children}
-    </div>
+    <MuiCard elevation={2} {...props}>
+      <CardContent sx={{ p: paddingValue }}>{children}</CardContent>
+    </MuiCard>
   );
 };

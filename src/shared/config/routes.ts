@@ -1,20 +1,9 @@
 // Centralized routes configuration
-
-import {
-  HomePage,
-  LoginPage,
-  RegisterPage,
-  DashboardPage,
-  ProfilePage,
-  SettingsPage,
-} from '@/pages-layer';
-
 export interface RouteConfig {
   path: string;
   title: string;
   description: string;
   requiresAuth: boolean;
-  component: () => Promise<{ default: React.ComponentType }>;
 }
 
 export const ROUTES: Record<string, RouteConfig> = {
@@ -23,60 +12,36 @@ export const ROUTES: Record<string, RouteConfig> = {
     title: 'Home',
     description: 'Welcome to Easy Dash',
     requiresAuth: false,
-    component: () =>
-      import('@/pages-layer/HomePage').then((module) => ({
-        default: module.HomePage,
-      })),
   },
   LOGIN: {
     path: '/login',
     title: 'Login',
     description: 'Sign in to your account',
     requiresAuth: false,
-    component: () =>
-      import('@/pages-layer/LoginPage').then((module) => ({
-        default: module.LoginPage,
-      })),
   },
   REGISTER: {
     path: '/register',
     title: 'Register',
     description: 'Create a new account',
     requiresAuth: false,
-    component: () =>
-      import('@/pages-layer/RegisterPage').then((module) => ({
-        default: module.RegisterPage,
-      })),
   },
   DASHBOARD: {
     path: '/dashboard',
     title: 'Dashboard',
     description: 'Your dashboard overview',
     requiresAuth: true,
-    component: () =>
-      import('@/pages-layer/DashboardPage').then((module) => ({
-        default: module.DashboardPage,
-      })),
   },
   PROFILE: {
     path: '/profile',
     title: 'Profile',
     description: 'Your profile settings',
     requiresAuth: true,
-    component: () =>
-      import('@/pages-layer/ProfilePage').then((module) => ({
-        default: module.ProfilePage,
-      })),
   },
   SETTINGS: {
     path: '/settings',
     title: 'Settings',
     description: 'Application settings',
     requiresAuth: true,
-    component: () =>
-      import('@/pages-layer/SettingsPage').then((module) => ({
-        default: module.SettingsPage,
-      })),
   },
 } as const;
 

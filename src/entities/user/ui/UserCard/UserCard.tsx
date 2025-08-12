@@ -1,10 +1,15 @@
-"use client";
+'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { Card } from '@/shared/ui/Card';
+import {
+  Card,
+  CardContent,
+  Avatar,
+  Typography,
+  Chip,
+  Box,
+} from '@mui/material';
 import { User } from '../../model/types';
-import styles from './UserCard.module.css';
 
 interface UserCardProps {
   user: User;
@@ -18,40 +23,43 @@ export const UserCard: React.FC<UserCardProps> = ({
   className = '',
 }) => {
   return (
-    <Card 
-      className={`${styles.userCard} ${className}`}
+    <Card
+      className={className}
       onClick={onClick}
-      padding="md"
+      sx={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      <div className={styles.avatar}>
-        {user.avatar ? (
-          <Image
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar
             src={user.avatar}
             alt={user.name}
-            width={48}
-            height={48}
-            className={styles.avatarImage}
-          />
-        ) : (
-          <div className={styles.avatarPlaceholder}>
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-        )}
-      </div>
-      
-      <div className={styles.userInfo}>
-        <h3 className={styles.userName}>{user.name}</h3>
-        <p className={styles.userEmail}>{user.email}</p>
-        <span className={`${styles.userRole} ${styles[user.role]}`}>
-          {user.role}
-        </span>
-      </div>
-      
-      <div className={styles.userStatus}>
-        <span className={`${styles.status} ${user.isActive ? styles.active : styles.inactive}`}>
-          {user.isActive ? 'Active' : 'Inactive'}
-        </span>
-      </div>
+            sx={{ width: 48, height: 48 }}
+          >
+            {!user.avatar && user.name.charAt(0).toUpperCase()}
+          </Avatar>
+
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" component="h3" gutterBottom>
+              {user.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {user.email}
+            </Typography>
+            <Chip
+              label={user.role}
+              size="small"
+              color={user.role === 'admin' ? 'secondary' : 'default'}
+              sx={{ mr: 1 }}
+            />
+            <Chip
+              label={user.isActive ? 'Active' : 'Inactive'}
+              size="small"
+              color={user.isActive ? 'success' : 'error'}
+              variant="outlined"
+            />
+          </Box>
+        </Box>
+      </CardContent>
     </Card>
   );
 };

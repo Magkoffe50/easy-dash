@@ -1,56 +1,14 @@
-"use client";
+'use client';
 
 import React from 'react';
-import styles from './Input.module.css';
+import { TextField, TextFieldProps } from '@mui/material';
 
-interface InputProps {
-  type?: 'text' | 'email' | 'password' | 'number' | 'search';
-  placeholder?: string;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
-  required?: boolean;
-  className?: string;
+interface InputProps extends Omit<TextFieldProps, 'size'> {
   size?: 'sm' | 'md' | 'lg';
-  error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  onFocus,
-  onBlur,
-  disabled = false,
-  required = false,
-  className = '',
-  size = 'md',
-  error,
-}) => {
-  const inputClasses = [
-    styles.input,
-    styles[size],
-    error && styles.error,
-    className
-  ].filter(Boolean).join(' ');
+export const Input: React.FC<InputProps> = ({ size = 'md', ...props }) => {
+  const muiSize = size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium';
 
-  return (
-    <div className={styles.container}>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        disabled={disabled}
-        required={required}
-        className={inputClasses}
-      />
-      {error && <span className={styles.errorMessage}>{error}</span>}
-    </div>
-  );
+  return <TextField size={muiSize} fullWidth {...props} />;
 };

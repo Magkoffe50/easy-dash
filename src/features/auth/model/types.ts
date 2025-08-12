@@ -1,4 +1,5 @@
 // Auth feature types
+import { User } from '@/entities/user/model/types';
 
 export interface LoginCredentials {
   email: string;
@@ -13,14 +14,14 @@ export interface RegisterData {
 }
 
 export interface AuthState {
-  user: any | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 }
 
 export interface AuthResponse {
-  user: any;
+  user: User;
   token: string;
   refreshToken: string;
 }

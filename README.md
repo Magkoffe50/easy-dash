@@ -64,7 +64,7 @@ The project uses TypeScript path mapping for clean imports:
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
@@ -97,19 +97,20 @@ npm start
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
-- **Styling**: CSS Modules
+- **Styling**: Material-UI (MUI) with Emotion
 - **Architecture**: Feature Sliced Design (FSD)
-- **UI Components**: Custom component library
-- **Icons**: SVG icons
+- **UI Components**: Material-UI component library
+- **Icons**: Material-UI icons
+- **Theming**: Light and dark theme support
 
 ## 📁 Key Components
 
 ### Shared Layer
 
-- **UI Components**: Reusable UI primitives (Button, Card, Input)
+- **UI Components**: MUI-based reusable components (Button, Card, Input, ThemeProvider)
 - **Utilities**: Common helper functions (classNames, formatDate, etc.)
 - **API Client**: Centralized API communication
-- **Configuration**: App-wide configuration and constants
+- **Configuration**: App-wide configuration, constants, and theme configuration
 
 ### Entities Layer
 
@@ -129,12 +130,24 @@ npm start
 
 ## 🎨 Design System
 
-The project includes a consistent design system with:
+The project uses Material-UI (MUI) design system with:
 
-- **Color Palette**: Primary, secondary, success, warning, error colors
-- **Typography**: Consistent font sizes and weights
-- **Spacing**: Standardized spacing scale
-- **Components**: Reusable UI components with variants
+- **Themes**: Light and dark theme support with automatic switching
+- **Color Palette**: Material Design color system with primary, secondary, and semantic colors
+- **Typography**: Material Design typography scale
+- **Spacing**: 8px base spacing unit system
+- **Components**: Comprehensive MUI component library with consistent styling
+- **Icons**: Material Design icon set
+
+### MUI Integration
+
+The project has been fully migrated to use Material-UI components:
+
+- **Theme Provider**: Custom theme provider with light/dark mode switching
+- **Component Wrappers**: Custom wrappers around MUI components for consistent API
+- **Theme Configuration**: Centralized theme configuration in `src/shared/config/theme.ts`
+- **Responsive Design**: Built-in responsive breakpoints and grid system
+- **Accessibility**: MUI's built-in accessibility features and ARIA support
 
 ## 📝 Contributing
 
