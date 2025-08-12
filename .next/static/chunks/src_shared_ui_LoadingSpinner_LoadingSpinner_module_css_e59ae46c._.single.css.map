@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/src/shared/ui/LoadingSpinner/LoadingSpinner.module.css"],"sourcesContent":[".spinner {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  width: 100%;\n  height: 100%;\n}\n\n.spinnerInner {\n  border: 2px solid #f3f3f3;\n  border-top: 2px solid #3498db;\n  border-radius: 50%;\n  animation: spin 1s linear infinite;\n}\n\n.sm .spinnerInner {\n  width: 20px;\n  height: 20px;\n}\n\n.md .spinnerInner {\n  width: 32px;\n  height: 32px;\n}\n\n.lg .spinnerInner {\n  width: 48px;\n  height: 48px;\n}\n\n@keyframes spin {\n  0% { transform: rotate(0deg); }\n  100% { transform: rotate(360deg); }\n}\n"],"names":[],"mappings":"AAAA;;;;;;;;AAQA;;;;;;;AAOA;;;;;AAKA;;;;;AAKA;;;;;AAKA"}}]
+}

@@ -1,0 +1,37 @@
+/* [project]/src/shared/ui/Card/Card.module.css [app-client] (css) */
+.Card-module__Zgq45q__card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all .2s;
+}
+
+.Card-module__Zgq45q__card:hover {
+  transform: translateY(-2px);
+}
+
+.Card-module__Zgq45q__sm {
+  padding: 16px;
+}
+
+.Card-module__Zgq45q__md {
+  padding: 24px;
+}
+
+.Card-module__Zgq45q__lg {
+  padding: 32px;
+}
+
+.Card-module__Zgq45q__shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+.Card-module__Zgq45q__shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
+}
+
+.Card-module__Zgq45q__shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -2px rgba(0, 0, 0, .05);
+}
+
+/*# sourceMappingURL=src_shared_ui_Card_Card_module_css_e59ae46c._.single.css.map*/

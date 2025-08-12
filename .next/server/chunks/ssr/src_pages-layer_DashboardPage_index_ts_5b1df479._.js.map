@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/DashboardPage/index.ts"],"sourcesContent":["export { DashboardPage } from './DashboardPage';\n"],"names":[],"mappings":";AAAA","debugId":null}}]
+}

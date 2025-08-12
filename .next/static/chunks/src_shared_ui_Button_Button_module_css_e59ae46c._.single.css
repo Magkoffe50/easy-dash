@@ -1,0 +1,63 @@
+/* [project]/src/shared/ui/Button/Button.module.css [app-client] (css) */
+.Button-module__fANS6W__button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all .2s;
+  display: inline-flex;
+}
+
+.Button-module__fANS6W__button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.Button-module__fANS6W__primary {
+  color: #fff;
+  background: #0070f3;
+}
+
+.Button-module__fANS6W__primary:hover:not(:disabled) {
+  background: #0051cc;
+}
+
+.Button-module__fANS6W__secondary {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.Button-module__fANS6W__secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.Button-module__fANS6W__outline {
+  color: #0070f3;
+  background: none;
+  border: 1px solid #0070f3;
+}
+
+.Button-module__fANS6W__outline:hover:not(:disabled) {
+  color: #fff;
+  background: #0070f3;
+}
+
+.Button-module__fANS6W__sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.Button-module__fANS6W__md {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+.Button-module__fANS6W__lg {
+  padding: 16px 32px;
+  font-size: 18px;
+}
+
+/*# sourceMappingURL=src_shared_ui_Button_Button_module_css_e59ae46c._.single.css.map*/
