@@ -580,6 +580,180 @@ __turbopack_context__.s({});
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$features$2f$auth$2f$ui$2f$LoginForm$2f$LoginForm$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/features/auth/ui/LoginForm/LoginForm.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$features$2f$auth$2f$ui$2f$LoginForm$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/src/features/auth/ui/LoginForm/index.ts [app-ssr] (ecmascript) <locals>");
 }),
+"[project]/src/shared/store/auth/authStore.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s({
+    "useAuthStore": ()=>useAuthStore
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zustand/esm/react.mjs [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$middleware$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zustand/esm/middleware.mjs [app-ssr] (ecmascript)");
+;
+;
+const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["create"])()((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$middleware$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["persist"])((set)=>({
+        // Initial state
+        isAuthenticated: false,
+        token: null,
+        isLoading: false,
+        error: null,
+        // Actions
+        login: (token)=>{
+            set({
+                isAuthenticated: true,
+                token,
+                error: null
+            });
+        },
+        logout: ()=>{
+            set({
+                isAuthenticated: false,
+                token: null,
+                error: null
+            });
+        },
+        setLoading: (isLoading)=>{
+            set({
+                isLoading
+            });
+        },
+        setError: (error)=>{
+            set({
+                error
+            });
+        }
+    }), {
+    name: 'auth-storage',
+    partialize: (state)=>({
+            isAuthenticated: state.isAuthenticated,
+            token: state.token
+        })
+}));
+}),
+"[project]/src/shared/store/user/userStore.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s({
+    "useUserStore": ()=>useUserStore
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zustand/esm/react.mjs [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$middleware$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zustand/esm/middleware.mjs [app-ssr] (ecmascript)");
+;
+;
+const useUserStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["create"])()((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$middleware$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["persist"])((set, get)=>({
+        // Initial state
+        user: null,
+        isLoading: false,
+        error: null,
+        // Actions
+        setUser: (user)=>{
+            set({
+                user,
+                error: null
+            });
+        },
+        updateUser: (updates)=>{
+            const { user } = get();
+            if (user) {
+                set({
+                    user: {
+                        ...user,
+                        ...updates,
+                        updatedAt: new Date().toISOString()
+                    }
+                });
+            }
+        },
+        clearUser: ()=>{
+            set({
+                user: null,
+                error: null
+            });
+        },
+        setLoading: (isLoading)=>{
+            set({
+                isLoading
+            });
+        },
+        setError: (error)=>{
+            set({
+                error
+            });
+        }
+    }), {
+    name: 'user-storage',
+    partialize: (state)=>({
+            user: state.user
+        })
+}));
+}),
+"[project]/src/shared/store/hooks.ts [app-ssr] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s({
+    "useAuth": ()=>useAuth
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/auth/authStore.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/user/userStore.ts [app-ssr] (ecmascript)");
+;
+;
+const useAuth = ()=>{
+    const auth = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuthStore"])();
+    const user = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useUserStore"])();
+    return {
+        // Auth state
+        isAuthenticated: auth.isAuthenticated,
+        token: auth.token,
+        isLoading: auth.isLoading || user.isLoading,
+        error: auth.error || user.error,
+        // User state
+        user: user.user,
+        // Actions
+        login: (token, userData)=>{
+            auth.login(token);
+            if (userData) {
+                user.setUser(userData);
+            }
+        },
+        logout: ()=>{
+            auth.logout();
+            user.clearUser();
+            localStorage.removeItem('auth-token');
+        },
+        setUser: user.setUser,
+        updateUser: user.updateUser,
+        setLoading: (loading)=>{
+            auth.setLoading(loading);
+            user.setLoading(loading);
+        },
+        setError: (error)=>{
+            auth.setError(error);
+            user.setError(error);
+        }
+    };
+};
+}),
+"[project]/src/shared/store/index.ts [app-ssr] (ecmascript) <locals>": ((__turbopack_context__) => {
+"use strict";
+
+// Store exports
+__turbopack_context__.s({});
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/auth/authStore.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/user/userStore.ts [app-ssr] (ecmascript)");
+// Custom hooks
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$hooks$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/hooks.ts [app-ssr] (ecmascript)");
+;
+;
+;
+}),
+"[project]/src/shared/store/index.ts [app-ssr] (ecmascript) <module evaluation>": ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s({});
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/auth/authStore.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/user/userStore.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$hooks$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/hooks.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/src/shared/store/index.ts [app-ssr] (ecmascript) <locals>");
+}),
 "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx [app-ssr] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
 
@@ -600,7 +774,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$mat
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/shared/config/index.ts [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$app$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/config/app.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/shared/store/index.ts [app-ssr] (ecmascript) <module evaluation>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$hooks$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/hooks.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/auth/authStore.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/store/user/userStore.ts [app-ssr] (ecmascript)");
 'use client';
 ;
 ;
@@ -614,7 +789,8 @@ const NotLoggedInHome = ()=>{
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const { login, setUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$hooks$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
+    const { login } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$auth$2f$authStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuthStore"])();
+    const { setUser } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$store$2f$user$2f$userStore$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useUserStore"])();
     const handleLogin = async (credentials)=>{
         setIsLoading(true);
         setError(null);
@@ -686,7 +862,7 @@ const NotLoggedInHome = ()=>{
                             children: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$app$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["APP_CONFIG"].name
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 68,
+                            lineNumber: 69,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Typography$2f$Typography$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Typography$3e$__["Typography"], {
@@ -699,7 +875,7 @@ const NotLoggedInHome = ()=>{
                             children: "Your Dashboard, Simplified"
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 81,
+                            lineNumber: 82,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Typography$2f$Typography$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Typography$3e$__["Typography"], {
@@ -712,18 +888,18 @@ const NotLoggedInHome = ()=>{
                             children: "Create beautiful dashboards with ease. Monitor your data, track your progress, and make informed decisions with our intuitive dashboard platform."
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 92,
+                            lineNumber: 93,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                    lineNumber: 67,
+                    lineNumber: 68,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                lineNumber: 55,
+                lineNumber: 56,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Box$2f$Box$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Box$3e$__["Box"], {
@@ -759,7 +935,7 @@ const NotLoggedInHome = ()=>{
                                     children: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$app$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["APP_CONFIG"].name
                                 }, void 0, false, {
                                     fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                    lineNumber: 128,
+                                    lineNumber: 129,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Typography$2f$Typography$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Typography$3e$__["Typography"], {
@@ -768,13 +944,13 @@ const NotLoggedInHome = ()=>{
                                     children: "Sign in to get started"
                                 }, void 0, false, {
                                     fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                    lineNumber: 131,
+                                    lineNumber: 132,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 121,
+                            lineNumber: 122,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$features$2f$auth$2f$ui$2f$LoginForm$2f$LoginForm$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["LoginForm"], {
@@ -783,7 +959,7 @@ const NotLoggedInHome = ()=>{
                             error: error || undefined
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 136,
+                            lineNumber: 137,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Divider$2f$Divider$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Divider$3e$__["Divider"], {
@@ -800,12 +976,12 @@ const NotLoggedInHome = ()=>{
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                lineNumber: 143,
+                                lineNumber: 144,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 142,
+                            lineNumber: 143,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Box$2f$Box$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Box$3e$__["Box"], {
@@ -820,12 +996,12 @@ const NotLoggedInHome = ()=>{
                                 children: "Create Account"
                             }, void 0, false, {
                                 fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                lineNumber: 149,
+                                lineNumber: 150,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 148,
+                            lineNumber: 149,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$mui$2f$material$2f$esm$2f$Box$2f$Box$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Box$3e$__["Box"], {
@@ -845,7 +1021,7 @@ const NotLoggedInHome = ()=>{
                                         children: "Terms of Service"
                                     }, void 0, false, {
                                         fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                        lineNumber: 162,
+                                        lineNumber: 163,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     ' ',
@@ -857,35 +1033,35 @@ const NotLoggedInHome = ()=>{
                                         children: "Privacy Policy"
                                     }, void 0, false, {
                                         fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                        lineNumber: 166,
+                                        lineNumber: 167,
                                         columnNumber: 15
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                                lineNumber: 160,
+                                lineNumber: 161,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                            lineNumber: 159,
+                            lineNumber: 160,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                    lineNumber: 119,
+                    lineNumber: 120,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-                lineNumber: 108,
+                lineNumber: 109,
                 columnNumber: 7
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/src/features/auth/ui/NotLoggedInHome/NotLoggedInHome.tsx",
-        lineNumber: 53,
+        lineNumber: 54,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -984,7 +1160,7 @@ const HomePage = ()=>{
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         // Check authentication status from localStorage
         const token = localStorage.getItem('auth-token');
-        if (token && !isAuthenticated) {
+        if (token) {
             login(token);
             setUser({
                 id: '1',
@@ -997,7 +1173,6 @@ const HomePage = ()=>{
             });
         }
     }, [
-        isAuthenticated,
         login,
         setUser
     ]);
@@ -1211,4 +1386,4 @@ const SettingsPage = ()=>{
 
 };
 
-//# sourceMappingURL=src_3da8eff2._.js.map
+//# sourceMappingURL=src_7b83c445._.js.map

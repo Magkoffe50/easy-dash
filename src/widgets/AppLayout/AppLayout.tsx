@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box } from '@mui/material';
 import { Header } from '@/widgets/Header';
 import { Sidebar } from '@/widgets/Sidebar';
-import { User } from '@/entities/user/model/types';
+import { useAuth } from '@/shared/store';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,22 +12,21 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { isAuthenticated, user, login, logout, setUser } = useAuth();
 
   const handleSidebarToggle = useCallback(() => {
     setIsSidebarOpen(!isSidebarOpen);
   }, [isSidebarOpen]);
 
   const handleLogout = useCallback(() => {
-    setIsAuthenticated(false);
+    logout();
     setUser(null);
     localStorage.removeItem('auth-token');
     console.log('User logged out');
-  }, []);
+  }, [logout, setUser]);
 
   const handleLogin = useCallback(() => {
-    setIsAuthenticated(true);
+    login('dummy-token');
     setUser({
       id: '1',
       name: 'John Doe',
@@ -39,24 +38,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       updatedAt: new Date().toISOString(),
     });
     localStorage.setItem('auth-token', 'dummy-token');
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem('auth-token');
-    if (token) {
-      setIsAuthenticated(true);
-      setUser({
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        avatar: undefined,
-        role: 'user',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    }
-  }, []);
+  }, [login, setUser]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

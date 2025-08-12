@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { LoggedInHome } from '@/features/dashboard';
 import { NotLoggedInHome } from '@/features/auth';
-import { User } from '@/entities/user/model/types';
+import { useAuth } from '@/shared/store';
 
 export const HomePage: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { isAuthenticated, user, login, setUser } = useAuth();
 
   useEffect(() => {
     // Check authentication status from localStorage
     const token = localStorage.getItem('auth-token');
-    if (token) {
-      setIsAuthenticated(true);
+    if (token && !isAuthenticated) {
+      login(token);
       setUser({
         id: '1',
         name: 'John Doe',
@@ -24,17 +23,12 @@ export const HomePage: React.FC = () => {
         updatedAt: new Date().toISOString(),
       });
     }
-  }, []);
-
-  const handleLoginSuccess = (newUser: User) => {
-    setUser(newUser);
-    setIsAuthenticated(true);
-  };
+  }, [isAuthenticated, login, setUser]);
 
   // Render appropriate component based on authentication state
   if (isAuthenticated && user) {
     return <LoggedInHome user={user} />;
   }
 
-  return <NotLoggedInHome onLoginSuccess={handleLoginSuccess} />;
+  return <NotLoggedInHome />;
 };

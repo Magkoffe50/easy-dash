@@ -7,18 +7,13 @@ import { LoginForm } from '@/features/auth/ui/LoginForm';
 import { Typography, Box, Link as MuiLink, Divider } from '@mui/material';
 import { APP_CONFIG } from '@/shared/config';
 import { LoginCredentials } from '@/features/auth/model/types';
-import { User } from '@/entities/user/model/types';
+import { useAuth } from '@/shared/store';
 
-interface NotLoggedInHomeProps {
-  onLoginSuccess: (user: User) => void;
-}
-
-export const NotLoggedInHome: React.FC<NotLoggedInHomeProps> = ({
-  onLoginSuccess,
-}) => {
+export const NotLoggedInHome: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login, setUser } = useAuth();
 
   const handleLogin = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -30,17 +25,18 @@ export const NotLoggedInHome: React.FC<NotLoggedInHomeProps> = ({
 
       // Mock successful login
       if (credentials.email && credentials.password) {
-        const mockUser: User = {
+        const mockUser = {
           id: '1',
           name: 'John Doe',
           email: credentials.email,
-          role: 'user',
+          role: 'user' as const,
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
 
-        onLoginSuccess(mockUser);
+        setUser(mockUser);
+        login('dummy-token');
         localStorage.setItem('auth-token', 'dummy-token');
         router.push('/dashboard');
       } else {
