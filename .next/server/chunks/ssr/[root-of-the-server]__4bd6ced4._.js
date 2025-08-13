@@ -23,7 +23,8 @@ __turbopack_context__.s({
     "getAllRoutes": ()=>getAllRoutes,
     "getProtectedRoutes": ()=>getProtectedRoutes,
     "getPublicRoutes": ()=>getPublicRoutes,
-    "getRouteByPath": ()=>getRouteByPath
+    "getRouteByPath": ()=>getRouteByPath,
+    "getRouteMetadata": ()=>getRouteMetadata
 });
 const ROUTES = {
     HOME: {
@@ -91,35 +92,22 @@ const getProtectedRoutes = ()=>{
 const getAllRoutes = ()=>{
     return Object.values(ROUTES);
 };
+const getRouteMetadata = (path)=>{
+    return getRouteByPath(path);
+};
 }),
 "[project]/src/shared/lib/router.ts [app-rsc] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
 
 // Router utility for dynamic page loading
 __turbopack_context__.s({
-    "getAllRoutes": ()=>getAllRoutes,
-    "getProtectedRoutesList": ()=>getProtectedRoutesList,
-    "getPublicRoutesList": ()=>getPublicRoutesList,
-    "getRouteMetadata": ()=>getRouteMetadata,
     "isProtectedRoute": ()=>isProtectedRoute
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/config/routes.ts [app-rsc] (ecmascript)");
 ;
-const getRouteMetadata = (path)=>{
-    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["getRouteByPath"])(path);
-};
 const isProtectedRoute = (path)=>{
     const route = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["getRouteByPath"])(path);
     return route?.requiresAuth || false;
-};
-const getAllRoutes = ()=>{
-    return Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"]);
-};
-const getPublicRoutesList = ()=>{
-    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["getPublicRoutes"])();
-};
-const getProtectedRoutesList = ()=>{
-    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["getProtectedRoutes"])();
 };
 }),
 "[project]/src/pages-layer/HomePage/HomePage.tsx [app-rsc] (client reference proxy) <module evaluation>": ((__turbopack_context__) => {
@@ -410,6 +398,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$api$2f$navigation$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/next/dist/api/navigation.react-server.js [app-rsc] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$components$2f$navigation$2e$react$2d$server$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/client/components/navigation.react-server.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$lib$2f$router$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/lib/router.ts [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/shared/config/routes.ts [app-rsc] (ecmascript)");
 // Import all page components directly for SSR
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$HomePage$2f$index$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/pages-layer/HomePage/index.ts [app-rsc] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$HomePage$2f$HomePage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/pages-layer/HomePage/HomePage.tsx [app-rsc] (ecmascript)");
@@ -432,46 +421,24 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$Set
 ;
 ;
 ;
-// Map routes to components
+;
+// Map routes to components using centralized configuration
 const ROUTE_COMPONENTS = {
-    '/': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$HomePage$2f$HomePage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["HomePage"],
-    '/login': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$LoginPage$2f$LoginPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["LoginPage"],
-    '/register': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$RegisterPage$2f$RegisterPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["RegisterPage"],
-    '/dashboard': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$DashboardPage$2f$DashboardPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["DashboardPage"],
-    '/profile': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$ProfilePage$2f$ProfilePage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ProfilePage"],
-    '/settings': __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$SettingsPage$2f$SettingsPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["SettingsPage"]
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].HOME.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$HomePage$2f$HomePage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["HomePage"],
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].LOGIN.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$LoginPage$2f$LoginPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["LoginPage"],
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].REGISTER.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$RegisterPage$2f$RegisterPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["RegisterPage"],
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].DASHBOARD.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$DashboardPage$2f$DashboardPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["DashboardPage"],
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].PROFILE.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$ProfilePage$2f$ProfilePage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ProfilePage"],
+    [__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"].SETTINGS.path]: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$pages$2d$layer$2f$SettingsPage$2f$SettingsPage$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["SettingsPage"]
 };
 function generateStaticParams() {
-    return [
-        {
-            slug: []
-        },
-        {
-            slug: [
-                'login'
-            ]
-        },
-        {
-            slug: [
-                'register'
-            ]
-        },
-        {
-            slug: [
-                'dashboard'
-            ]
-        },
-        {
-            slug: [
-                'profile'
-            ]
-        },
-        {
-            slug: [
-                'settings'
-            ]
-        }
-    ];
+    // Use centralized routes for static params generation
+    return Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$shared$2f$config$2f$routes$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ROUTES"]).map((route)=>{
+        const slug = route.path === '/' ? [] : route.path.slice(1).split('/');
+        return {
+            slug
+        };
+    });
 }
 async function generateMetadata({ params }) {
     const { slug = [] } = await params;
@@ -496,7 +463,7 @@ async function DynamicPage({ params }) {
     }
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(Component, {}, void 0, false, {
         fileName: "[project]/src/app/[[...slug]]/page.tsx",
-        lineNumber: 70,
+        lineNumber: 68,
         columnNumber: 10
     }, this);
 }

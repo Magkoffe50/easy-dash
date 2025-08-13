@@ -12,41 +12,18 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { isAuthenticated, user, login, logout, setUser } = useAuth();
+  const { isAuthenticated, user, onLogoutRequest } = useAuth();
 
   const handleSidebarToggle = useCallback(() => {
     setIsSidebarOpen(!isSidebarOpen);
   }, [isSidebarOpen]);
-
-  const handleLogout = useCallback(() => {
-    logout();
-    setUser(null);
-    localStorage.removeItem('auth-token');
-    console.log('User logged out');
-  }, [logout, setUser]);
-
-  const handleLogin = useCallback(() => {
-    login('dummy-token');
-    setUser({
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      avatar: undefined,
-      role: 'user',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    localStorage.setItem('auth-token', 'dummy-token');
-  }, [login, setUser]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header
         onMenuToggle={isAuthenticated ? handleSidebarToggle : undefined}
         user={user || undefined}
-        onLogout={handleLogout}
-        onLogin={handleLogin}
+        onLogout={onLogoutRequest}
       />
 
       <Box sx={{ display: 'flex', flex: 1 }}>
@@ -54,7 +31,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           <Sidebar
             isOpen={isSidebarOpen}
             isAuthenticated={isAuthenticated}
-            onLogout={handleLogout}
+            onLogout={onLogoutRequest}
           />
         )}
 

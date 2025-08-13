@@ -346,7 +346,8 @@ __turbopack_context__.s({
     "getAllRoutes": ()=>getAllRoutes,
     "getProtectedRoutes": ()=>getProtectedRoutes,
     "getPublicRoutes": ()=>getPublicRoutes,
-    "getRouteByPath": ()=>getRouteByPath
+    "getRouteByPath": ()=>getRouteByPath,
+    "getServerRouteConfig": ()=>getServerRouteConfig
 });
 const ROUTES = {
     HOME: {
@@ -413,6 +414,15 @@ const getProtectedRoutes = ()=>{
 };
 const getAllRoutes = ()=>{
     return Object.values(ROUTES);
+};
+const getServerRouteConfig = ()=>{
+    return {
+        routes: ROUTES,
+        getPublicRoutes: ()=>getPublicRoutes(),
+        getProtectedRoutes: ()=>getProtectedRoutes(),
+        getAllRoutes: ()=>getAllRoutes(),
+        getRouteByPath: (path)=>getRouteByPath(path)
+    };
 };
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);

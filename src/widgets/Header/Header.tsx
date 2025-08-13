@@ -18,9 +18,9 @@ import {
   Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@/shared/ui/ThemeProvider';
-import { Button } from '@/shared/ui/Button';
-import { APP_CONFIG } from '@/shared/config';
+import { APP_CONFIG, ROUTES } from '@/shared/config';
 import { User } from '@/entities/user/model/types';
+import Link from 'next/link';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onMenuToggle,
   user,
   onLogout,
-  onLogin,
+  // onLogin,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const { themeMode, toggleTheme } = useTheme();
@@ -49,15 +49,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <AppBar position="static">
       <Toolbar>
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={onMenuToggle}
-          sx={{ mr: 2 }}
-        >
-          <MenuIcon />
-        </IconButton>
+        {user && (
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={onMenuToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
 
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           {APP_CONFIG.name}
@@ -105,9 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Menu>
             </>
           ) : (
-            <Button variant="contained" size="small" onClick={onLogin}>
-              Sign In
-            </Button>
+            <Link href={ROUTES.HOME.path}>Sign In</Link>
           )}
         </Box>
       </Toolbar>

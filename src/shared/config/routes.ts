@@ -79,3 +79,7 @@ export const getProtectedRoutes = (): RouteConfig[] => {
 export const getAllRoutes = (): RouteConfig[] => {
   return Object.values(ROUTES);
 };
+
+export const getRouteMetadata = (path: string): RouteConfig | undefined => {
+  return getRouteByPath(path);
+};

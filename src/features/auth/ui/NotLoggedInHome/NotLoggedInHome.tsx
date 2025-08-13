@@ -11,42 +11,13 @@ import { useAuth } from '@/shared/store';
 
 export const NotLoggedInHome: React.FC = () => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, setUser } = useAuth();
+  const { onLoginRequest } = useAuth();
 
   const handleLogin = async (credentials: LoginCredentials) => {
-    setIsLoading(true);
     setError(null);
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock successful login
-      if (credentials.email && credentials.password) {
-        const mockUser = {
-          id: '1',
-          name: 'John Doe',
-          email: credentials.email,
-          role: 'user' as const,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        setUser(mockUser);
-        login('dummy-token');
-        localStorage.setItem('auth-token', 'dummy-token');
-        router.push('/dashboard');
-      } else {
-        throw new Error('Invalid credentials');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
+    onLoginRequest(credentials);
   };
 
   return (
@@ -133,11 +104,7 @@ export const NotLoggedInHome: React.FC = () => {
             </Typography>
           </Box>
 
-          <LoginForm
-            onSubmit={handleLogin}
-            isLoading={isLoading}
-            error={error || undefined}
-          />
+          <LoginForm onSubmit={handleLogin} error={error || undefined} />
 
           <Divider sx={{ my: 3 }}>
             <Typography variant="body2" color="text.secondary">

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getRouteMetadata } from '@/shared/lib/router';
+import { getRouteMetadata, ROUTES } from '@/shared/config/routes';
 import type { Metadata } from 'next';
 
 // Import all page components directly for SSR
@@ -16,25 +16,22 @@ interface DynamicPageProps {
   };
 }
 
-// Map routes to components
+// Map routes to components using centralized configuration
 const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
-  '/': HomePage,
-  '/login': LoginPage,
-  '/register': RegisterPage,
-  '/dashboard': DashboardPage,
-  '/profile': ProfilePage,
-  '/settings': SettingsPage,
+  [ROUTES.HOME.path]: HomePage,
+  [ROUTES.LOGIN.path]: LoginPage,
+  [ROUTES.REGISTER.path]: RegisterPage,
+  [ROUTES.DASHBOARD.path]: DashboardPage,
+  [ROUTES.PROFILE.path]: ProfilePage,
+  [ROUTES.SETTINGS.path]: SettingsPage,
 };
 
 export function generateStaticParams() {
-  return [
-    { slug: [] },
-    { slug: ['login'] },
-    { slug: ['register'] },
-    { slug: ['dashboard'] },
-    { slug: ['profile'] },
-    { slug: ['settings'] },
-  ];
+  // Use centralized routes for static params generation
+  return Object.values(ROUTES).map((route) => {
+    const slug = route.path === '/' ? [] : route.path.slice(1).split('/');
+    return { slug };
+  });
 }
 
 export async function generateMetadata({

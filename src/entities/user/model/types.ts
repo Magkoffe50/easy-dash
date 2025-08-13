@@ -2,13 +2,13 @@
 
 export interface User {
   id: string;
-  email: string;
+  email?: string;
   name: string;
   avatar?: string;
-  role: 'user' | 'admin';
+  role?: 'user' | 'admin';
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserProfile extends User {
