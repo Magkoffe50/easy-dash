@@ -2,11 +2,13 @@ import { useAuthStore } from '../auth/authStore';
 import { useRouterStore } from '../router';
 import { useUserStore } from '../user/userStore';
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 export const useAuth = () => {
   const auth = useAuthStore();
   const user = useUserStore();
-  const router = useRouterStore();
+  const routerStore = useRouterStore();
+  const router = useRouter();
 
   const onCheckAuth = useCallback(async () => {
     auth.setLoading(true);
@@ -30,14 +32,14 @@ export const useAuth = () => {
         .getState()
         .setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
-      router.setInitialized(true);
+      routerStore.setInitialized(true);
       auth.setLoading(false);
     }
   }, [auth, router, user]);
 
   const onLoginRequest = useCallback(
     async (credentials: { email: string; password: string }) => {
-      auth.setLoading(true);
+      auth.setLoginLoading(true);
 
       try {
         // Simulate API call
@@ -58,6 +60,7 @@ export const useAuth = () => {
           localStorage.setItem('auth-token', 'dummy-token');
 
           auth.login('dummy-token');
+          router.push('/dashboard');
         } else {
           throw new Error('Invalid credentials');
         }
@@ -66,8 +69,8 @@ export const useAuth = () => {
           .getState()
           .setError(err instanceof Error ? err.message : 'Login failed');
       } finally {
-        router.setInitialized(true);
-        auth.setLoading(false);
+        routerStore.setInitialized(true);
+        auth.setLoginLoading(false);
       }
     },
     [auth, router],
@@ -82,10 +85,11 @@ export const useAuth = () => {
 
   return {
     // Auth state
-    isAppReady: router.isInitialized,
+    isAppReady: routerStore.isInitialized,
     isAuthenticated: auth.isAuthenticated,
     token: auth.token,
-    isLoading: auth.isLoading || user.isLoading,
+    isLoading: auth.isLoading,
+    isLoginLoading: auth.isLoginLoading,
     error: auth.error || user.error,
 
     // User state
@@ -98,10 +102,6 @@ export const useAuth = () => {
 
     setUser: user.setUser,
     updateUser: user.updateUser,
-    setLoading: (loading: boolean) => {
-      auth.setLoading(loading);
-      user.setLoading(loading);
-    },
     setError: (error: string | null) => {
       auth.setError(error);
       user.setError(error);

@@ -8,7 +8,6 @@ export const useUserStore = create<UserStore>()(
     (set, get) => ({
       // Initial state
       user: null,
-      isLoading: false,
       error: null,
 
       // Actions
@@ -31,10 +30,6 @@ export const useUserStore = create<UserStore>()(
 
       clearUser: () => {
         set({ user: null, error: null });
-      },
-
-      setLoading: (isLoading: boolean) => {
-        set({ isLoading });
       },
 
       setError: (error: string | null) => {

@@ -9,6 +9,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       token: null,
       isLoading: false,
+      isLoginLoading: false,
       error: null,
 
       // Actions
@@ -22,6 +23,9 @@ export const useAuthStore = create<AuthStore>()(
 
       setLoading: (isLoading: boolean) => {
         set({ isLoading });
+      },
+      setLoginLoading: (isLoginLoading: boolean) => {
+        set({ isLoginLoading });
       },
 
       setError: (error: string | null) => {

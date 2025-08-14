@@ -1,12 +1,16 @@
-"use client";
+'use client';
 
+import { LoginForm } from '@/features';
+import { useAuth } from '@/shared/store';
+import { Box } from '@mui/material';
 import React from 'react';
 
 export const LoginPage: React.FC = () => {
+  const { onLoginRequest, isLoginLoading } = useAuth();
+
   return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>Login Page</h1>
-      <p>This page is coming soon...</p>
-    </div>
+    <Box>
+      <LoginForm onSubmit={onLoginRequest} isLoading={isLoginLoading} />
+    </Box>
   );
 };

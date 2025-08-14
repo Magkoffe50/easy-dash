@@ -51,7 +51,7 @@ const mockRecentDashboards = [
 ];
 
 interface LoggedInHomeProps {
-  user: User;
+  user: User | null;
 }
 
 export const LoggedInHome: React.FC<LoggedInHomeProps> = ({ user }) => {
