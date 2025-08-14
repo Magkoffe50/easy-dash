@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/SettingsPage/SettingsPage.tsx"],"sourcesContent":["\"use client\";\n\nimport React from 'react';\n\nexport const SettingsPage: React.FC = () => {\n  return (\n    <div style={{ padding: '2rem', textAlign: 'center' }}>\n      <h1>Settings Page</h1>\n      <p>This page is coming soon...</p>\n    </div>\n  );\n};\n"],"names":[],"mappings":";;;;AAAA;;AAIO,MAAM,eAAyB;IACpC,qBACE,6LAAC;QAAI,OAAO;YAAE,SAAS;YAAQ,WAAW;QAAS;;0BACjD,6LAAC;0BAAG;;;;;;0BACJ,6LAAC;0BAAE;;;;;;;;;;;;AAGT;KAPa","debugId":null}},
-    {"offset": {"line": 53, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/SettingsPage/index.ts"],"sourcesContent":["export { SettingsPage } from './SettingsPage';\n"],"names":[],"mappings":";AAAA","debugId":null}}]
-}

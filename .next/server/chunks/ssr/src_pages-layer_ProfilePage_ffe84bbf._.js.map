@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/ProfilePage/ProfilePage.tsx"],"sourcesContent":["\"use client\";\n\nimport React from 'react';\n\nexport const ProfilePage: React.FC = () => {\n  return (\n    <div style={{ padding: '2rem', textAlign: 'center' }}>\n      <h1>Profile Page</h1>\n      <p>This page is coming soon...</p>\n    </div>\n  );\n};\n"],"names":[],"mappings":";;;;AAAA;;AAIO,MAAM,cAAwB;IACnC,qBACE,8OAAC;QAAI,OAAO;YAAE,SAAS;YAAQ,WAAW;QAAS;;0BACjD,8OAAC;0BAAG;;;;;;0BACJ,8OAAC;0BAAE;;;;;;;;;;;;AAGT","debugId":null}},
-    {"offset": {"line": 43, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/ProfilePage/index.ts"],"sourcesContent":["export { ProfilePage } from './ProfilePage';\n"],"names":[],"mappings":";AAAA","debugId":null}}]
-}

@@ -1,34 +1,33 @@
 {
-  "name": "easy-dash",
-  "version": "0.1.0",
+  "name": "easy-dash-monorepo",
+  "version": "1.0.0",
+  "description": "Easy Dash - Frontend and Backend Monorepo",
   "private": true,
+  "workspaces": [
+    "front",
+    "backend"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@emotion/cache": "^11.14.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "@mui/material-nextjs": "^7.3.0",
-    "@mui/x-data-grid": "^8.10.0",
-    "next": "15.4.6",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "zustand": "^5.0.7"
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:backend\"",
+    "dev:front": "cd front && npm run dev",
+    "dev:backend": "cd backend && npm run start:dev",
+    "build": "npm run build:front && npm run build:backend",
+    "build:front": "cd front && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "start": "concurrently \"npm run start:front\" \"npm run start:backend\"",
+    "start:front": "cd front && npm run start",
+    "start:backend": "cd backend && npm run start:prod",
+    "install:all": "npm install && cd front && npm install && cd ../backend && npm install",
+    "clean": "rm -rf front/node_modules backend/node_modules front/.next backend/dist",
+    "lint": "npm run lint:front && npm run lint:backend",
+    "lint:front": "cd front && npm run lint",
+    "lint:backend": "cd backend && npm run lint"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.4.6",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "typescript": "^5"
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

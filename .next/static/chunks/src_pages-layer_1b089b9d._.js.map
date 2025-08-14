@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/HomePage/index.ts"],"sourcesContent":["export { HomePage } from './HomePage';\n"],"names":[],"mappings":";AAAA","debugId":null}},
-    {"offset": {"line": 26, "column": 0}, "map": {"version":3,"sources":["file:///Users/kirich/own/easy-dash/src/pages-layer/index.ts"],"sourcesContent":["// Pages layer - page components\nexport * from './HomePage';\n"],"names":[],"mappings":"AAAA,gCAAgC;;AAChC","debugId":null}}]
-}

@@ -1,170 +1,169 @@
-# Easy Dash
+# Easy Dash - Full Stack Application
 
-A modern dashboard built with Next.js and Feature Sliced Design (FSD) architecture.
+A modern full-stack application with Next.js frontend and NestJS backend, featuring PostgreSQL database integration.
 
-## 🏗️ Architecture
-
-This project follows the **Feature Sliced Design (FSD)** methodology, which provides a structured approach to organizing code based on business features and technical concerns.
-
-### Project Structure
+## Project Structure
 
 ```
-src/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Root page
-│   └── styles/            # Global styles
-├── shared/                # Shared layer (reusable across all layers)
-│   ├── ui/               # UI components (Button, Card, Input, etc.)
-│   ├── lib/              # Utilities and helpers
-│   ├── api/              # API client and types
-│   └── config/           # Configuration files
-├── entities/             # Business entities
-│   ├── user/             # User entity
-│   └── dashboard/        # Dashboard entity
-├── features/             # Business features
-│   ├── auth/             # Authentication feature
-│   └── dashboard/        # Dashboard feature
-├── widgets/              # Composite UI blocks
-│   ├── Header/           # Header widget
-│   ├── Sidebar/          # Sidebar widget
-│   └── DashboardStats/   # Dashboard stats widget
-└── pages/                # Page components
-    ├── HomePage/         # Home page
-    ├── DashboardPage/    # Dashboard page
-    └── LoginPage/        # Login page
+easy-dash/
+├── front/                 # Next.js Frontend Application
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+├── backend/              # NestJS Backend Application
+│   ├── src/
+│   ├── package.json
+│   └── ...
+├── package.json          # Root package.json for monorepo management
+└── README.md
 ```
 
-### Layer Dependencies
+## Prerequisites
 
-FSD enforces a strict dependency rule: **higher layers can import from lower layers, but not vice versa**.
+- Node.js (>= 18.0.0)
+- npm (>= 8.0.0)
+- PostgreSQL (>= 12.0)
 
-```
-pages → widgets → features → entities → shared
-```
+## Quick Start
 
-- **shared**: No dependencies on other layers
-- **entities**: Can only import from `shared`
-- **features**: Can import from `entities` and `shared`
-- **widgets**: Can import from `features`, `entities`, and `shared`
-- **pages**: Can import from `widgets`, `features`, `entities`, and `shared`
-
-### Import Aliases
-
-The project uses TypeScript path mapping for clean imports:
-
-- `@/*` → `src/*`
-- `@/shared/*` → `src/shared/*`
-- `@/entities/*` → `src/entities/*`
-- `@/features/*` → `src/features/*`
-- `@/widgets/*` → `src/widgets/*`
-- `@/pages/*` → `src/pages/*`
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+### 1. Install Dependencies
 
 ```bash
+# Install root dependencies
 npm install
+
+# Install frontend and backend dependencies
+npm run install:all
 ```
 
-### Development
+### 2. Database Setup
+
+1. Install and start PostgreSQL
+2. Create a database named `easy_dash_db`
+3. Copy the environment configuration:
 
 ```bash
+cd backend
+cp env.example .env
+```
+
+4. Update the `.env` file with your PostgreSQL credentials:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+DB_DATABASE=easy_dash_db
+```
+
+### 3. Start Development Servers
+
+```bash
+# Start both frontend and backend in development mode
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+This will start:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:3001
+- API Documentation: http://localhost:3001/api
 
-### Building
+## Available Scripts
 
-```bash
-npm run build
+### Root Level Commands
+
+- `npm run dev` - Start both frontend and backend in development mode
+- `npm run build` - Build both frontend and backend
+- `npm run start` - Start both applications in production mode
+- `npm run install:all` - Install dependencies for all packages
+- `npm run clean` - Clean all node_modules and build artifacts
+- `npm run lint` - Run linting for both frontend and backend
+
+### Frontend Commands (from front/ directory)
+
+- `npm run dev` - Start Next.js development server
+- `npm run build` - Build the Next.js application
+- `npm run start` - Start the production server
+- `npm run lint` - Run ESLint
+
+### Backend Commands (from backend/ directory)
+
+- `npm run start:dev` - Start NestJS in development mode with hot reload
+- `npm run build` - Build the NestJS application
+- `npm run start:prod` - Start the production server
+- `npm run lint` - Run ESLint
+
+## API Documentation
+
+Once the backend is running, you can access the Swagger API documentation at:
+http://localhost:3001/api
+
+## Database Schema
+
+The application includes a User entity with the following fields:
+- `id` (UUID, Primary Key)
+- `email` (String, Unique)
+- `firstName` (String)
+- `lastName` (String)
+- `avatar` (String, Optional)
+- `isActive` (Boolean, Default: true)
+- `createdAt` (Timestamp)
+- `updatedAt` (Timestamp)
+
+## API Endpoints
+
+### Users
+- `GET /users` - Get all users
+- `GET /users/:id` - Get user by ID
+- `POST /users` - Create a new user
+- `PATCH /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
+
+## Development
+
+### Frontend (Next.js)
+- Built with Next.js 15
+- Uses Material-UI for components
+- Zustand for state management
+- TypeScript for type safety
+
+### Backend (NestJS)
+- Built with NestJS framework
+- TypeORM for database operations
+- PostgreSQL as the database
+- Swagger for API documentation
+- Class-validator for request validation
+
+## Environment Variables
+
+### Backend (.env)
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_DATABASE=easy_dash_db
+
+# Application Configuration
+PORT=3001
+NODE_ENV=development
+
+# JWT Configuration (for future use)
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=24h
 ```
 
-### Production
+## Contributing
 
-```bash
-npm start
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Material-UI (MUI) with Emotion
-- **Architecture**: Feature Sliced Design (FSD)
-- **UI Components**: Material-UI component library
-- **Icons**: Material-UI icons
-- **Theming**: Light and dark theme support
-
-## 📁 Key Components
-
-### Shared Layer
-
-- **UI Components**: MUI-based reusable components (Button, Card, Input, ThemeProvider)
-- **Utilities**: Common helper functions (classNames, formatDate, etc.)
-- **API Client**: Centralized API communication
-- **Configuration**: App-wide configuration, constants, and theme configuration
-
-### Entities Layer
-
-- **User Entity**: User-related types and UI components
-- **Dashboard Entity**: Dashboard-related types and components
-
-### Features Layer
-
-- **Auth Feature**: Authentication logic and UI
-- **Dashboard Feature**: Dashboard-specific functionality
-
-### Widgets Layer
-
-- **Header**: Application header with navigation
-- **Sidebar**: Navigation sidebar
-- **DashboardStats**: Dashboard statistics display
-
-## 🎨 Design System
-
-The project uses Material-UI (MUI) design system with:
-
-- **Themes**: Light and dark theme support with automatic switching
-- **Color Palette**: Material Design color system with primary, secondary, and semantic colors
-- **Typography**: Material Design typography scale
-- **Spacing**: 8px base spacing unit system
-- **Components**: Comprehensive MUI component library with consistent styling
-- **Icons**: Material Design icon set
-
-### MUI Integration
-
-The project has been fully migrated to use Material-UI components:
-
-- **Theme Provider**: Custom theme provider with light/dark mode switching
-- **Component Wrappers**: Custom wrappers around MUI components for consistent API
-- **Theme Configuration**: Centralized theme configuration in `src/shared/config/theme.ts`
-- **Responsive Design**: Built-in responsive breakpoints and grid system
-- **Accessibility**: MUI's built-in accessibility features and ARIA support
-
-## 📝 Contributing
-
-When adding new features:
-
-1. **Identify the layer**: Determine which FSD layer your code belongs to
-2. **Follow dependencies**: Only import from lower layers
-3. **Use aliases**: Import using the `@/` alias pattern
-4. **Create index files**: Export components from index files for clean imports
-5. **Add types**: Define TypeScript interfaces for all data structures
-
-## 📚 Resources
-
-- [Feature Sliced Design Methodology](https://feature-sliced.design/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
