@@ -18,63 +18,47 @@ export const useAuth = () => {
     auth.setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const mockUser = {
-      id: '1',
-      name: 'John Doe',
-      isActive: true,
-    };
+    const [data] = await api.get('/auth/me');
 
-    try {
-      const token = localStorage.getItem('auth-token');
+    if (data) {
+      auth.login();
+      user.setUser(data as User);
 
-      if (token) {
-        auth.login(token);
-        user.setUser(mockUser);
+      if (
+        window.location.pathname === '/login' ||
+        window.location.pathname === '/'
+      ) {
+        router.push('/dashboard');
       }
-    } catch (error) {
-      auth.setError(error instanceof Error ? error.message : 'Login failed');
-    } finally {
-      routerStore.setInitialized(true);
-      auth.setLoading(false);
     }
-  }, [auth, routerStore, user]);
+
+    routerStore.setInitialized(true);
+    auth.setLoading(false);
+  }, [auth, router, routerStore, user]);
 
   const onLoginRequest = useCallback(
     async (credentials: { email: string; password: string }) => {
       auth.setLoginLoading(true);
 
-      try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const [_, error] = await api.post('/users', credentials);
+      if (credentials.email && credentials.password) {
+        const [data, error] = await api.post<{ user: User }>(
+          '/auth/login',
+          credentials,
+        );
 
-        if (credentials.email && credentials.password) {
-          const mockUser = {
-            id: '1',
-            name: 'John Doe',
-            email: credentials.email,
-            role: 'user' as const,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          user.setUser(mockUser);
-          localStorage.setItem('auth-token', 'dummy-token');
-
-          auth.login('dummy-token');
+        if (error) {
+          notifications.showError(error.message);
+        } else if (data && 'user' in data) {
+          user.setUser(data.user);
+          auth.login();
           router.push('/dashboard');
-        } else {
-          throw new Error('Invalid credentials');
         }
-      } catch (err) {
-        auth.setError(err instanceof Error ? err.message : 'Login failed');
-      } finally {
-        routerStore.setInitialized(true);
-        auth.setLoginLoading(false);
       }
+
+      routerStore.setInitialized(true);
+      auth.setLoginLoading(false);
     },
-    [auth, router, routerStore, user],
+    [auth, notifications, router, routerStore, user],
   );
 
   const onRegisterRequest = useCallback(
@@ -82,12 +66,13 @@ export const useAuth = () => {
       auth.setLoginLoading(true);
 
       if (user.email && user.password && user.firstName && user.lastName) {
-        const [_, error] = await api.post('/users', user);
+        const [_, error] = await api.post('/auth/register', user);
 
         if (error) {
           notifications.showError(error.message);
         } else {
           notifications.showSuccess('User registered successfully');
+          auth.login();
           router.push('/dashboard');
         }
 
@@ -97,18 +82,27 @@ export const useAuth = () => {
     [auth, notifications, router],
   );
 
-  const onLogoutRequest = useCallback(() => {
-    auth.logout();
-    useUserStore.getState().clearUser();
-    localStorage.removeItem('auth-token');
-    localStorage.removeItem('user-data');
-  }, [auth]);
+  const onLogoutRequest = useCallback(async () => {
+    auth.setLoading(true);
+
+    const [_, error] = await api.post('/auth/logout');
+
+    if (error) {
+      notifications.showError(error.message);
+    } else {
+      auth.logout();
+      useUserStore.getState().clearUser();
+      localStorage.removeItem('user-data');
+      router.push('/');
+    }
+
+    auth.setLoading(false);
+  }, [auth, notifications, router]);
 
   return {
     // Auth state
     isAppReady: routerStore.isInitialized,
     isAuthenticated: auth.isAuthenticated,
-    token: auth.token,
     isLoading: auth.isLoading,
     isLoginLoading: auth.isLoginLoading,
     error: auth.error || user.error,

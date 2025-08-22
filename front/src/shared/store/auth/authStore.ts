@@ -7,18 +7,17 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       // Initial state
       isAuthenticated: false,
-      token: null,
       isLoading: false,
       isLoginLoading: false,
       error: null,
 
       // Actions
-      login: (token: string) => {
-        set({ isAuthenticated: true, token, error: null });
+      login: () => {
+        set({ isAuthenticated: true, error: null });
       },
 
       logout: () => {
-        set({ isAuthenticated: false, token: null, error: null });
+        set({ isAuthenticated: false, error: null });
       },
 
       setLoading: (isLoading: boolean) => {
@@ -36,7 +35,6 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
-        token: state.token,
       }), // Only persist auth state
     },
   ),

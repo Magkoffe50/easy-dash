@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import dotenv from 'dotenv';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 
 const envFile =
   process.env.NODE_ENV === 'production'
@@ -21,6 +22,9 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Cookie parser middleware
+  app.use(cookieParser());
+
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -36,6 +40,7 @@ async function bootstrap() {
     .setDescription('The Easy Dash API description')
     .setVersion('1.0')
     .addTag('users')
+    .addTag('auth')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

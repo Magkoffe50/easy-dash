@@ -8,15 +8,18 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './user.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -28,6 +31,7 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(
     @Body() createUserDto: CreateUserDto,
   ): Promise<Omit<User, 'password'>> {
@@ -37,6 +41,7 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'List of users', type: [User] })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
@@ -45,6 +50,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   findOne(@Param('id') id: string): Promise<User | null> {
     return this.usersService.findOne(id);
   }
@@ -57,6 +63,7 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -69,6 +76,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiResponse({ status: 204, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
   }
