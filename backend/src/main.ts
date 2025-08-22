@@ -2,9 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import dotenv from 'dotenv';
+import path from 'path';
+
+const envFile =
+  process.env.NODE_ENV === 'production'
+    ? '.env.production'
+    : '.env.development';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  dotenv.config({ path: path.resolve(__dirname, envFile) });
 
   // Enable CORS
   app.enableCors({
@@ -32,6 +41,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 3001;
+
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/api`);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -10,6 +10,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  Link as MuiLink,
 } from '@mui/material';
 import {
   AccountCircle,
@@ -21,6 +22,7 @@ import { useTheme } from '@/shared/ui/ThemeProvider';
 import { APP_CONFIG, ROUTES } from '@/shared/config';
 import { User } from '@/entities/user/model/types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -33,18 +35,18 @@ export const Header: React.FC<HeaderProps> = ({
   onMenuToggle,
   user,
   onLogout,
-  // onLogin,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const { themeMode, toggleTheme } = useTheme();
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const handleMenuOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    },
+    [setAnchorEl],
+  );
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const handleClose = useCallback(() => setAnchorEl(null), []);
 
   return (
     <AppBar position="static">
@@ -62,7 +64,9 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {APP_CONFIG.name}
+          <Link href={user ? ROUTES.DASHBOARD.path : ROUTES.HOME.path}>
+            {APP_CONFIG.name}
+          </Link>
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -77,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-label="account of current user"
                 aria-controls="menu-appbar"
                 aria-haspopup="true"
-                onClick={handleMenu}
+                onClick={handleMenuOpen}
                 color="inherit"
               >
                 {user.avatar ? (

@@ -28,7 +28,9 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
+  create(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
     return this.usersService.create(createUserDto);
   }
 

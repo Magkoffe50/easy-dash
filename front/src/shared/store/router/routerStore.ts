@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { RouterStore } from './types';
 
-export const useRouterStore = create<RouterStore>((set, get) => ({
+export const useRouterStore = create<RouterStore>((set) => ({
   // Initial state
   isInitialized: false,
   currentPath: null,

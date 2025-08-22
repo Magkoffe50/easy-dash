@@ -9,6 +9,9 @@ export interface User {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  lastName?: string;
+  firstName?: string;
+  password?: string;
 }
 
 export interface UserProfile extends User {

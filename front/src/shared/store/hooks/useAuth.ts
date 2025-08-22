@@ -3,12 +3,16 @@ import { useRouterStore } from '../router';
 import { useUserStore } from '../user/userStore';
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/shared/api';
+import { User } from '@/entities';
+import useNotifications from './useNotifications';
 
 export const useAuth = () => {
   const auth = useAuthStore();
   const user = useUserStore();
   const routerStore = useRouterStore();
   const router = useRouter();
+  const notifications = useNotifications();
 
   const onCheckAuth = useCallback(async () => {
     auth.setLoading(true);
@@ -28,9 +32,7 @@ export const useAuth = () => {
         user.setUser(mockUser);
       }
     } catch (error) {
-      useAuthStore
-        .getState()
-        .setError(error instanceof Error ? error.message : 'Login failed');
+      auth.setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
       routerStore.setInitialized(true);
       auth.setLoading(false);
@@ -56,7 +58,7 @@ export const useAuth = () => {
             updatedAt: new Date().toISOString(),
           };
 
-          useUserStore.getState().setUser(mockUser);
+          user.setUser(mockUser);
           localStorage.setItem('auth-token', 'dummy-token');
 
           auth.login('dummy-token');
@@ -65,15 +67,31 @@ export const useAuth = () => {
           throw new Error('Invalid credentials');
         }
       } catch (err) {
-        useAuthStore
-          .getState()
-          .setError(err instanceof Error ? err.message : 'Login failed');
+        auth.setError(err instanceof Error ? err.message : 'Login failed');
       } finally {
         routerStore.setInitialized(true);
         auth.setLoginLoading(false);
       }
     },
-    [auth, router],
+    [auth, router, routerStore, user],
+  );
+
+  const onRegisterRequest = useCallback(
+    async (user: User) => {
+      auth.setLoginLoading(true);
+
+      if (user.email && user.password && user.firstName && user.lastName) {
+        const [data, error] = await api.post('/users', user);
+
+        if (error) {
+          notifications.onSetTemporaryNotification(error.message);
+        }
+
+        console.log('Registered:', data);
+      }
+      auth.setLoginLoading(false);
+    },
+    [auth, notifications],
   );
 
   const onLogoutRequest = useCallback(() => {
@@ -99,6 +117,7 @@ export const useAuth = () => {
     onCheckAuth,
     onLoginRequest,
     onLogoutRequest,
+    onRegisterRequest,
 
     setUser: user.setUser,
     updateUser: user.updateUser,

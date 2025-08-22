@@ -1,20 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { LoginCredentials, LoginForm } from '@/features/auth';
 import { useAuth } from '@/shared/store';
 import { APP_CONFIG } from '@/shared/config';
-import { Box, Typography, Divider, Link as MuiLink } from '@mui/material';
+import { Box, Typography, Link as MuiLink } from '@mui/material';
 
 export const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { onLoginRequest, isLoginLoading } = useAuth();
 
-  const handleLogin = async (credentials: LoginCredentials) => {
-    setError(null);
+  const handleLogin = useCallback(
+    (credentials: LoginCredentials) => {
+      setError(null);
 
-    onLoginRequest(credentials);
-  };
+      onLoginRequest(credentials);
+    },
+    [onLoginRequest],
+  );
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex' }}>
@@ -105,18 +108,6 @@ export const HomePage: React.FC = () => {
             onSubmit={handleLogin}
             error={error || undefined}
           />
-
-          <Divider sx={{ my: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              New to {APP_CONFIG.name}?
-            </Typography>
-          </Divider>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <MuiLink href="/register" underline="hover">
-              Create Account
-            </MuiLink>
-          </Box>
 
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

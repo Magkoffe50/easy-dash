@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import {
@@ -11,33 +11,32 @@ import {
   Alert,
   Link as MuiLink,
 } from '@mui/material';
-import { LoginCredentials } from '../../model/types';
+import { RegisterData } from '../../model/types';
 import Link from 'next/link';
+import { useAuth } from '@/shared/store';
+import { error } from 'console';
 
-interface LoginFormProps {
-  onSubmit: (credentials: LoginCredentials) => void;
-  isLoading?: boolean;
-  error?: string;
-}
-
-export const LoginForm: React.FC<LoginFormProps> = ({
-  onSubmit,
-  isLoading = false,
-  error,
-}) => {
-  const [formData, setFormData] = useState<LoginCredentials>({
+export const RegisterForm: FC = () => {
+  const [formData, setFormData] = useState<RegisterData>({
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  const { onRegisterRequest, isLoginLoading, error } = useAuth();
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+
+      onRegisterRequest(formData);
+    },
+    [formData],
+  );
 
   const handleChange =
-    (field: keyof LoginCredentials) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof RegisterData) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({
         ...prev,
         [field]: e.target.value,
@@ -45,10 +44,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     };
 
   return (
-    <Card sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
+    <Card sx={{ maxWidth: 500, mx: 'auto', mt: 4 }}>
       <CardContent sx={{ p: 4 }}>
         <Typography variant="h4" component="h2" gutterBottom align="center">
-          Welcome Back
+          Create Account
         </Typography>
         <Typography
           variant="body1"
@@ -56,10 +55,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           align="center"
           gutterBottom
         >
-          Sign in to your account
+          Sign up to get started
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Input
+              type="text"
+              label="First Name"
+              value={formData.firstName}
+              onChange={handleChange('firstName')}
+              required
+              size="lg"
+            />
+            <Input
+              type="text"
+              label="Last Name"
+              value={formData.lastName}
+              onChange={handleChange('lastName')}
+              required
+              size="lg"
+            />
+          </Box>
+
           <Box sx={{ mb: 2 }}>
             <Input
               type="email"
@@ -92,19 +110,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             type="submit"
             variant="contained"
             size="large"
-            disabled={isLoading}
+            disabled={isLoginLoading}
             fullWidth
             sx={{ mb: 2 }}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoginLoading ? 'Creating account...' : 'Create Account'}
           </Button>
         </Box>
 
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="body2">
-            Don&apos;t have an account?{' '}
-            <MuiLink component={Link} href="/register" underline="hover">
-              Sign up
+            Already have an account?{' '}
+            <MuiLink component={Link} href="/login" underline="hover">
+              Sign in
             </MuiLink>
           </Typography>
         </Box>

@@ -1,3 +1,3 @@
 // Shared API utilities
-export * from './client';
 export * from './types';
+export * from './httpRequestService';

@@ -21,16 +21,27 @@ export interface ApiError {
   status?: number;
 }
 
-// Common entity types
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  role: 'user' | 'admin';
-  createdAt: string;
-  updatedAt: string;
+export interface HttpRequestConfig {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  headers?: Record<string, string>;
+  body?: unknown;
+  timeout?: number;
+  credentials?: RequestCredentials;
 }
+
+// Legacy interface for backward compatibility
+export interface HttpResponse<T = unknown> {
+  data: T | null;
+  error: string | null;
+  status: number;
+  ok: boolean;
+}
+
+// New tuple type for the desired API
+export type HttpResult<T> = [
+  T | null,
+  { status: string; message: string } | null,
+];
 
 export interface DashboardStats {
   totalUsers: number;
