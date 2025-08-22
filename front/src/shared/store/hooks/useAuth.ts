@@ -37,7 +37,7 @@ export const useAuth = () => {
       routerStore.setInitialized(true);
       auth.setLoading(false);
     }
-  }, [auth, router, user]);
+  }, [auth, routerStore, user]);
 
   const onLoginRequest = useCallback(
     async (credentials: { email: string; password: string }) => {
@@ -46,6 +46,7 @@ export const useAuth = () => {
       try {
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1000));
+        const [_, error] = await api.post('/users', credentials);
 
         if (credentials.email && credentials.password) {
           const mockUser = {
@@ -81,17 +82,19 @@ export const useAuth = () => {
       auth.setLoginLoading(true);
 
       if (user.email && user.password && user.firstName && user.lastName) {
-        const [data, error] = await api.post('/users', user);
+        const [_, error] = await api.post('/users', user);
 
         if (error) {
-          notifications.onSetTemporaryNotification(error.message);
+          notifications.showError(error.message);
+        } else {
+          notifications.showSuccess('User registered successfully');
+          router.push('/dashboard');
         }
 
-        console.log('Registered:', data);
+        auth.setLoginLoading(false);
       }
-      auth.setLoginLoading(false);
     },
-    [auth, notifications],
+    [auth, notifications, router],
   );
 
   const onLogoutRequest = useCallback(() => {

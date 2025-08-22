@@ -12,17 +12,15 @@ const useNotifications = () => {
     notificaitons.addNotification({
       message,
       severity,
-      duration,
+      duration: duration || 5000,
     });
   };
 
   return {
     // Initial state
-    error: notificaitons.error,
     notifications: notificaitons.notifications,
 
     //Actions
-    setError: notificaitons.setError,
     addNotification: notificaitons.addNotification,
     removeNotification: notificaitons.removeNotification,
     clearNotifications: notificaitons.clearNotifications,
@@ -37,14 +35,6 @@ const useNotifications = () => {
       showNotification(message, 'warning', duration),
     showInfo: (message: string, duration?: number) =>
       showNotification(message, 'info', duration),
-
-    onSetTemporaryNotification: (message: string) => {
-      notificaitons.setError(message);
-
-      setTimeout(() => {
-        notificaitons.setError(null);
-      }, 5000);
-    },
   };
 };
 

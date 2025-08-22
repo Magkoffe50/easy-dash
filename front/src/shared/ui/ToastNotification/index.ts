@@ -1,4 +1,1 @@
-export {
-  default as ToastNotification,
-  ToastNotificationStack,
-} from './ToastNotification';
+export { default, ToastNotificationStack } from './ToastNotification';

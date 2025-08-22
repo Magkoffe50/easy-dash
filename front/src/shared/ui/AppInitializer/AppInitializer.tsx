@@ -9,7 +9,7 @@ import { ToastNotificationStack } from '../ToastNotification';
 
 export const AppInitializer: React.FC<PropsWithChildren> = ({ children }) => {
   const { isLoading, isAppReady, onCheckAuth } = useAuth();
-  const { error, removeNotification } = useNotifications();
+  const { notifications, removeNotification } = useNotifications();
   const hasCheckedAuth = useRef(false);
   useAppRouteGuard();
 
@@ -22,26 +22,12 @@ export const AppInitializer: React.FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <>
-      {error && (
-        <ToastNotificationStack
-          notifications={[
-            {
-              id: 'error',
-              message: error,
-              severity: 'error',
-            },
-          ]}
-          onClose={removeNotification}
-        />
-      )}
-
-      {/* General notifications */}
-      {/* {notifications.length > 0 && (
+      {notifications.length > 0 && (
         <ToastNotificationStack
           notifications={notifications}
           onClose={removeNotification}
         />
-      )} */}
+      )}
       {(!isAppReady || isLoading) && (
         <Box
           sx={{ background: 'rgba(0,0,0,0.2)' }}

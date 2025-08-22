@@ -8,12 +8,10 @@ export interface Notification {
 }
 
 export interface NotificationsState {
-  error: string | null;
   notifications: Notification[];
 }
 
 export interface NotificationsActions {
-  setError: (error: string | null) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;

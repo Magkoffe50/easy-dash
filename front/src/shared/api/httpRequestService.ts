@@ -1,7 +1,7 @@
 // HTTP Request Service with async/await support
 // Supports both development and production environments
 
-import { HttpRequestConfig, HttpResponse, HttpResult } from './types';
+import { HttpRequestConfig, HttpResult } from './types';
 
 // Environment configuration
 const getApiBaseUrl = (): string => {
@@ -120,11 +120,11 @@ export class HttpRequestService {
     });
 
     if (fetchError) {
-      return [null, fetchError];
+      return [null, { status: 'error', message: fetchError }];
     }
 
     if (!response) {
-      return [null, 'No response received'];
+      return [null, { status: 'error', message: 'No response received' }];
     }
 
     try {
@@ -146,7 +146,7 @@ export class HttpRequestService {
           null,
           {
             status: `HTTP ${response.status}: ${response.statusText}`,
-            message: data?.message,
+            message: data?.message || 'Unknown error',
           },
         ];
       }
@@ -154,7 +154,7 @@ export class HttpRequestService {
       return [
         null,
         {
-          status: null,
+          status: 'error',
           message: `Failed to parse response: ${
             parseError instanceof Error ? parseError.message : 'Unknown error'
           }`,

@@ -3,14 +3,9 @@ import { NotificationsStore } from './types';
 
 export const notificaitonsStore = create<NotificationsStore>((set, get) => ({
   // Initial state
-  error: null,
   notifications: [],
 
   // Actions
-  setError: (error: string | null) => {
-    set({ error });
-  },
-
   addNotification: (notification) => {
     const id = Date.now().toString();
     const newNotification = { ...notification, id };
