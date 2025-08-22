@@ -153,9 +153,12 @@ export class HttpRequestService {
     } catch (parseError) {
       return [
         null,
-        `Failed to parse response: ${
-          parseError instanceof Error ? parseError.message : 'Unknown error'
-        }`,
+        {
+          status: null,
+          message: `Failed to parse response: ${
+            parseError instanceof Error ? parseError.message : 'Unknown error'
+          }`,
+        },
       ];
     }
   }
