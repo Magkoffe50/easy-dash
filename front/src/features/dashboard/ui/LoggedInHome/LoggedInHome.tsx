@@ -61,7 +61,7 @@ export const LoggedInHome: React.FC<LoggedInHomeProps> = ({ user }) => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
-          Welcome back, {user?.name}!
+          Welcome back, {user?.firstName}!
         </Typography>
         <Typography variant="h6" color="text.secondary">
           Here are your recent dashboards

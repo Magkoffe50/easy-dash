@@ -22,7 +22,6 @@ import { useTheme } from '@/shared/ui/ThemeProvider';
 import { APP_CONFIG, ROUTES } from '@/shared/config';
 import { User } from '@/entities/user/model/types';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -94,24 +93,32 @@ export const Header: React.FC<HeaderProps> = ({
                 id="menu-appbar"
                 anchorEl={anchorEl}
                 anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
+                  vertical: 'bottom',
+                  horizontal: 'left',
                 }}
                 keepMounted
                 transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
+                  vertical: 'bottom',
+                  horizontal: 'left',
                 }}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleClose}>Profile</MenuItem>
-                <MenuItem onClick={handleClose}>My account</MenuItem>
+                <MenuItem>
+                  <MuiLink
+                    component={Link}
+                    href={ROUTES.PROFILE.path}
+                    underline="none"
+                    color="inherit"
+                  >
+                    Profile
+                  </MuiLink>
+                </MenuItem>
                 <MenuItem onClick={onLogout}>Logout</MenuItem>
               </Menu>
             </>
           ) : (
-            <Link href={ROUTES.HOME.path}>Sign In</Link>
+            <Link href={ROUTES.LOGIN.path}>Sign In</Link>
           )}
         </Box>
       </Toolbar>

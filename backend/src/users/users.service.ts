@@ -4,6 +4,8 @@ import {
   Logger,
   ConflictException,
   InternalServerErrorException,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -108,8 +110,19 @@ export class UsersService {
     return await this.usersRepository.findOne({ where: { email } });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
+  async update(id, updateUserDto: UpdateUserDto): Promise<User | null> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.password !== updateUserDto.password) {
+      throw new ForbiddenException('Invalid password');
+    }
+
     await this.usersRepository.update(id, updateUserDto);
+
     return await this.findOne(id);
   }
 

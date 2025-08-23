@@ -14,7 +14,6 @@ import {
 import { RegisterData } from '../../model/types';
 import Link from 'next/link';
 import { useAuth } from '@/shared/store';
-import { error } from 'console';
 
 export const RegisterForm: FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
