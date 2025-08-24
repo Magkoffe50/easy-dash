@@ -21,7 +21,6 @@ export const HomePage: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex' }}>
-      {/* Left side - Application title */}
       <Box
         sx={{
           flex: 1,
