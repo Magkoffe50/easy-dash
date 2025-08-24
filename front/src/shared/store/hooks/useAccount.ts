@@ -1,18 +1,17 @@
 import { notificaitonsStore } from '../notifications/notificationsStore';
 import { api } from '@/shared/api';
 import { useUserStore } from '../user/userStore';
+import { User } from '@/entities';
 
-export type AccountData = {
-  firstName: string;
-  lastName: string;
-  password: string;
-};
+export type AccountData = Pick<User, 'firstName' | 'lastName' | 'password'>;
 
 const useAccount = () => {
   const notificaitons = notificaitonsStore();
   const user = useUserStore();
 
-  const updateAccount = async (data: AccountData) => {
+  const updateAccount = async (
+    data: Pick<User, 'firstName' | 'lastName' | 'password'>,
+  ) => {
     if (!data.firstName || !data.lastName || !data.password) {
       notificaitons.addNotification({
         message: 'Please fill in all fields',
@@ -30,6 +29,8 @@ const useAccount = () => {
       });
       return;
     }
+
+    user.setUser({ ...user.user, ...data } as User);
 
     notificaitons.addNotification({
       message: 'Account updated successfully',

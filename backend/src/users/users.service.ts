@@ -13,6 +13,8 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { encryptPassword } from './utils/encryptPassword';
+import { decryptPassword } from './utils/decryptPassword';
 
 @Injectable()
 export class UsersService {
@@ -55,11 +57,7 @@ export class UsersService {
         throw new ConflictException('User with this email already exists');
       }
 
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(
-        createUserDto.password,
-        saltRounds,
-      );
+      const hashedPassword = await encryptPassword(createUserDto.password);
 
       const user = queryRunner.manager.create(User, {
         ...createUserDto,
@@ -117,11 +115,24 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.password !== updateUserDto.password) {
+    const isPasswordValid = await decryptPassword(
+      updateUserDto.password!,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
       throw new ForbiddenException('Invalid password');
     }
 
-    await this.usersRepository.update(id, updateUserDto);
+    const hashedPassword = await encryptPassword(updateUserDto.password!);
+
+    const updatedUser = {
+      ...user,
+      ...updateUserDto,
+      password: hashedPassword,
+    };
+
+    await this.usersRepository.update(id, updatedUser);
 
     return await this.findOne(id);
   }
