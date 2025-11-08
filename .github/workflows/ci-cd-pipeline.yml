@@ -209,23 +209,13 @@ jobs:
           restore-keys: |
             node-modules-backend-${{ runner.os }}-
 
-      - name: Verify and install dependencies
+      - name: Install/verify dependencies
         working-directory: ./backend
         run: |
-          echo "Checking cache restore status..."
-          if [ "${{ steps.cache-backend-test.outputs.cache-hit }}" != "true" ]; then
-            echo "⚠️ Cache miss, installing dependencies..."
-            npm install --prefer-offline --no-audit
-          else
-            echo "✅ Cache hit, verifying critical packages..."
-            # Check if ts-jest exists (needed for tests)
-            if ! npm ls ts-jest > /dev/null 2>&1; then
-              echo "⚠️ ts-jest missing, reinstalling all dependencies..."
-              npm install --prefer-offline --no-audit
-            else
-              echo "✅ All test dependencies verified"
-            fi
-          fi
+          echo "Installing dependencies to ensure completeness..."
+          npm install --prefer-offline --no-audit
+          echo "Verifying ts-jest installation..."
+          npm ls ts-jest || echo "ts-jest check failed"
 
       - name: Run backend tests
         working-directory: ./backend
