@@ -70,7 +70,7 @@ export const LoggedInHome: React.FC<LoggedInHomeProps> = ({ user }) => {
 
       <Grid container spacing={3}>
         {mockRecentDashboards.map((dashboard) => (
-          <Grid item xs={12} md={4} key={dashboard.id}>
+          <Grid size={{ xs: 12, md: 4 }} key={dashboard.id}>
             <Card
               sx={{
                 height: '100%',

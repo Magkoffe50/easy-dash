@@ -10,5 +10,7 @@ interface InputProps extends Omit<TextFieldProps, 'size'> {
 export const Input: React.FC<InputProps> = ({ size = 'md', ...props }) => {
   const muiSize = size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium';
 
-  return <TextField size={muiSize} fullWidth {...props} />;
+  return (
+    <TextField size={muiSize as TextFieldProps['size']} fullWidth {...props} />
+  );
 };

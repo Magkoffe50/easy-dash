@@ -146,7 +146,7 @@ export class HttpRequestService {
           null,
           {
             status: `HTTP ${response.status}: ${response.statusText}`,
-            message: data?.message || 'Unknown error',
+            message: (data as { message?: string })?.message || 'Unknown error',
           },
         ];
       }

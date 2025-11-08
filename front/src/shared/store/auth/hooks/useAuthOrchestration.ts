@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/shared/api';
 import { User } from '@/entities';
 import useNotifications from '../../notifications/hooks/useNotifications';
+import { RegisterData } from '@/features';
 
 export const useAuthOrchestration = () => {
   const auth = useAuthStore();
@@ -66,7 +67,7 @@ export const useAuthOrchestration = () => {
   );
 
   const onRegisterRequest = useCallback(
-    async (userData: User) => {
+    async (userData: RegisterData) => {
       auth.setLoginLoading(true);
 
       if (

@@ -53,7 +53,7 @@ export const ProfilePage: React.FC = () => {
               justifyContent="center"
               sx={{ minWidth: { md: '600px', lg: '600px' } }}
             >
-              <Grid item xs={12} md={6} lg={6}>
+              <Grid size={{ xs: 12, md: 6, lg: 6 }}>
                 <Input
                   type="text"
                   label="First Name"
@@ -64,7 +64,7 @@ export const ProfilePage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6} lg={6}>
+              <Grid size={{ xs: 12, md: 6, lg: 6 }}>
                 <Input
                   type="text"
                   label="Last Name"
@@ -75,7 +75,7 @@ export const ProfilePage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6} lg={6}>
+              <Grid size={{ xs: 12, md: 6, lg: 6 }}>
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Current password
                 </Typography>
@@ -89,7 +89,7 @@ export const ProfilePage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6} lg={6}>
+              <Grid size={{ xs: 12, md: 6, lg: 6 }}>
                 <Button
                   type="submit"
                   variant="contained"
