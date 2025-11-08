@@ -104,27 +104,6 @@ jobs:
           echo "📥 Installing backend dependencies..."
           npm install
 
-      - name: Upload root node_modules to artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: root-node-modules
-          path: node_modules
-          retention-days: 1
-
-      - name: Upload frontend node_modules to artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-node-modules
-          path: front/node_modules
-          retention-days: 1
-
-      - name: Upload backend node_modules to artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-node-modules
-          path: backend/node_modules
-          retention-days: 1
-
       - name: Build frontend
         working-directory: ./front
         run: npm run build
@@ -158,58 +137,29 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Download root node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore root node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: root-node-modules
           path: node_modules
+          key: node-modules-root-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-root-${{ runner.os }}-
 
-      - name: Download frontend node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore frontend node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: frontend-node-modules
           path: front/node_modules
+          key: node-modules-frontend-${{ runner.os }}-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: |
+            node-modules-frontend-${{ runner.os }}-
 
-      - name: Download backend node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore backend node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: backend-node-modules
           path: backend/node_modules
-
-      - name: Restore executable permissions and fix binaries
-        run: |
-          echo "Restoring permissions for all node_modules..."
-          find front/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          find backend/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          find node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          
-          echo "Checking frontend binaries..."
-          cd front
-          if [ ! -f node_modules/.bin/next ] && [ ! -L node_modules/.bin/next ]; then
-            echo "⚠️ next binary not found, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
-          echo "Verifying next is executable..."
-          chmod +x node_modules/.bin/next 2>/dev/null || true
-          echo "Testing if next can run..."
-          if ! node_modules/.bin/next --version > /dev/null 2>&1; then
-            echo "⚠️ next cannot run, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
-          
-          echo "Checking backend binaries..."
-          cd ../backend
-          if [ ! -f node_modules/.bin/eslint ] && [ ! -L node_modules/.bin/eslint ]; then
-            echo "⚠️ eslint binary not found, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
-          echo "Verifying eslint is executable..."
-          chmod +x node_modules/.bin/eslint 2>/dev/null || true
-          echo "Testing if eslint can run..."
-          if ! node_modules/.bin/eslint --version > /dev/null 2>&1; then
-            echo "⚠️ eslint cannot run, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
+          key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            node-modules-backend-${{ runner.os }}-
 
       - name: Lint frontend
         working-directory: ./front
@@ -234,44 +184,29 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Download root node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore root node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: root-node-modules
           path: node_modules
+          key: node-modules-root-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-root-${{ runner.os }}-
 
-      - name: Download frontend node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore frontend node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: frontend-node-modules
           path: front/node_modules
+          key: node-modules-frontend-${{ runner.os }}-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: |
+            node-modules-frontend-${{ runner.os }}-
 
-      - name: Download backend node_modules
-        uses: actions/download-artifact@v4
+      - name: Restore backend node_modules from cache
+        uses: actions/cache/restore@v4
         with:
-          name: backend-node-modules
           path: backend/node_modules
-
-      - name: Restore executable permissions and fix binaries
-        run: |
-          echo "Restoring permissions for all node_modules..."
-          find front/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          find backend/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          find node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
-          
-          echo "Checking jest binary..."
-          cd backend
-          if [ ! -f node_modules/.bin/jest ] && [ ! -L node_modules/.bin/jest ]; then
-            echo "⚠️ jest binary not found, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
-          echo "Verifying jest is executable..."
-          chmod +x node_modules/.bin/jest 2>/dev/null || true
-          echo "Testing if jest can run..."
-          if ! node_modules/.bin/jest --version > /dev/null 2>&1; then
-            echo "⚠️ jest cannot run, reinstalling..."
-            npm install --prefer-offline --no-audit
-          fi
+          key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            node-modules-backend-${{ runner.os }}-
 
       - name: Run backend tests
         working-directory: ./backend
