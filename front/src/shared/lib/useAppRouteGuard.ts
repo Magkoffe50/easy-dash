@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ROUTES } from '@/shared/config/routes';
-import { useAuth } from '@/shared/store';
+import { useAuthSelectors } from '@/shared/store/auth/hooks';
 
 export const useAppRouteGuard = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAppReady, isAuthenticated } = useAuth();
+  const { isAppReady, isAuthenticated } = useAuthSelectors(); // Data only
 
   useEffect(() => {
     // Only make routing decisions after user is loaded

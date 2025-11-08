@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { NotificationsStore } from './types';
 
-export const notificaitonsStore = create<NotificationsStore>((set, get) => ({
+export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   // Initial state
   notifications: [],
 

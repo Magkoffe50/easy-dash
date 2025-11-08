@@ -1,13 +1,13 @@
-import { useAuthStore } from '../auth/authStore';
-import { useRouterStore } from '../router';
-import { useUserStore } from '../user/userStore';
+import { useAuthStore } from '../authStore';
+import { useRouterStore } from '../../router';
+import { useUserStore } from '../../user/userStore';
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/shared/api';
 import { User } from '@/entities';
-import useNotifications from './useNotifications';
+import useNotifications from '../../notifications/hooks/useNotifications';
 
-export const useAuth = () => {
+export const useAuthOrchestration = () => {
   const auth = useAuthStore();
   const user = useUserStore();
   const routerStore = useRouterStore();
@@ -16,20 +16,24 @@ export const useAuth = () => {
 
   const onCheckAuth = useCallback(async () => {
     auth.setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const [data] = await api.get('/auth/me');
+    const [data, error] = await api.get('/auth/me');
 
-    if (data) {
-      auth.login();
-      user.setUser(data as User);
+    if (error || !data) {
+      auth.logout();
+      routerStore.setInitialized(true);
+      auth.setLoading(false);
+      return;
+    }
 
-      if (
-        window.location.pathname === '/login' ||
-        window.location.pathname === '/'
-      ) {
-        router.push('/dashboard');
-      }
+    auth.login();
+    user.setUser(data as User);
+
+    if (
+      window.location.pathname === '/login' ||
+      window.location.pathname === '/'
+    ) {
+      router.push('/dashboard');
     }
 
     routerStore.setInitialized(true);
@@ -62,11 +66,16 @@ export const useAuth = () => {
   );
 
   const onRegisterRequest = useCallback(
-    async (user: User) => {
+    async (userData: User) => {
       auth.setLoginLoading(true);
 
-      if (user.email && user.password && user.firstName && user.lastName) {
-        const [_, error] = await api.post('/auth/register', user);
+      if (
+        userData.email &&
+        userData.password &&
+        userData.firstName &&
+        userData.lastName
+      ) {
+        const [, error] = await api.post('/auth/register', userData);
 
         if (error) {
           notifications.showError(error.message);
@@ -85,42 +94,23 @@ export const useAuth = () => {
   const onLogoutRequest = useCallback(async () => {
     auth.setLoading(true);
 
-    const [_, error] = await api.post('/auth/logout');
+    const [, error] = await api.post('/auth/logout');
 
     if (error) {
       notifications.showError(error.message);
     } else {
       auth.logout();
-      useUserStore.getState().clearUser();
-      localStorage.removeItem('user-data');
+      user.clearUser();
       router.push('/');
     }
 
     auth.setLoading(false);
-  }, [auth, notifications, router]);
+  }, [auth, notifications, router, user]);
 
   return {
-    // Auth state
-    isAppReady: routerStore.isInitialized,
-    isAuthenticated: auth.isAuthenticated,
-    isLoading: auth.isLoading,
-    isLoginLoading: auth.isLoginLoading,
-    error: auth.error || user.error,
-
-    // User state
-    user: user.user,
-
-    // Actions
     onCheckAuth,
     onLoginRequest,
     onLogoutRequest,
     onRegisterRequest,
-
-    setUser: user.setUser,
-    updateUser: user.updateUser,
-    setError: (error: string | null) => {
-      auth.setError(error);
-      user.setError(error);
-    },
   };
 };

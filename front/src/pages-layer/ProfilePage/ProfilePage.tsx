@@ -1,6 +1,7 @@
 'use client';
 
-import useAccount, { AccountData } from '@/shared/store/hooks/useAccount';
+import { useAccount } from '@/shared/store';
+import { AccountData } from '@/shared/store/user/hooks';
 import { Button, Input } from '@/shared/ui';
 import { Box, Card, CardContent, Grid, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';

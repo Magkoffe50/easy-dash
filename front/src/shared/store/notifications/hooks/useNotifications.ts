@@ -1,15 +1,15 @@
-import { notificaitonsStore } from '@/shared/store/notifications/notificationsStore';
+import { useNotificationsStore } from '../notificationsStore';
 import { AlertColor } from '@mui/material';
 
 const useNotifications = () => {
-  const notificaitons = notificaitonsStore();
+  const notifications = useNotificationsStore();
 
   const showNotification = (
     message: string,
     severity: AlertColor = 'info',
     duration?: number,
   ) => {
-    notificaitons.addNotification({
+    notifications.addNotification({
       message,
       severity,
       duration: duration || 5000,
@@ -17,15 +17,12 @@ const useNotifications = () => {
   };
 
   return {
-    // Initial state
-    notifications: notificaitons.notifications,
+    notifications: notifications.notifications,
 
-    //Actions
-    addNotification: notificaitons.addNotification,
-    removeNotification: notificaitons.removeNotification,
-    clearNotifications: notificaitons.clearNotifications,
+    addNotification: notifications.addNotification,
+    removeNotification: notifications.removeNotification,
+    clearNotifications: notifications.clearNotifications,
 
-    // Utility functions
     showNotification,
     showSuccess: (message: string, duration?: number) =>
       showNotification(message, 'success', duration),

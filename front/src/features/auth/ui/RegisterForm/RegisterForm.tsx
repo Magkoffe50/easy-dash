@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { RegisterData } from '../../model/types';
 import Link from 'next/link';
-import { useAuth } from '@/shared/store';
+import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
 
 export const RegisterForm: FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
@@ -23,7 +23,8 @@ export const RegisterForm: FC = () => {
     password: '',
   });
 
-  const { onRegisterRequest, isLoginLoading, error } = useAuth();
+  const { isLoginLoading, error } = useAuthSelectors();
+  const { onRegisterRequest } = useAuthOrchestration();
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {

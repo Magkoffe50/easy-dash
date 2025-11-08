@@ -1,14 +1,18 @@
 'use client';
 
-import { useAuth } from '@/shared/store';
+import {
+  useAuthSelectors,
+  useAuthOrchestration,
+} from '@/shared/store/auth/hooks';
+import { useNotifications } from '@/shared/store/notifications/hooks';
 import { Box, CircularProgress } from '@mui/material';
 import { useAppRouteGuard } from '@/shared/lib/useAppRouteGuard';
 import { PropsWithChildren, useEffect, useRef } from 'react';
-import useNotifications from '@/shared/store/hooks/useNotifications';
 import { ToastNotificationStack } from '../ToastNotification';
 
 export const AppInitializer: React.FC<PropsWithChildren> = ({ children }) => {
-  const { isLoading, isAppReady, onCheckAuth } = useAuth();
+  const { isLoading, isAppReady } = useAuthSelectors();
+  const { onCheckAuth } = useAuthOrchestration();
   const { notifications, removeNotification } = useNotifications();
   const hasCheckedAuth = useRef(false);
   useAppRouteGuard();

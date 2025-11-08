@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Box } from '@mui/material';
 import { Header } from '@/widgets/Header';
 import { Sidebar } from '@/widgets/Sidebar';
-import { useAuth } from '@/shared/store';
+import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,7 +12,8 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { isAuthenticated, user, onLogoutRequest } = useAuth();
+  const { isAuthenticated, user } = useAuthSelectors();
+  const { onLogoutRequest } = useAuthOrchestration();
 
   const handleSidebarToggle = useCallback(() => {
     setIsSidebarOpen(!isSidebarOpen);

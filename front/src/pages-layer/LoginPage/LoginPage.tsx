@@ -1,12 +1,13 @@
 'use client';
 
 import { LoginForm } from '@/features';
-import { useAuth } from '@/shared/store';
+import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
 import { Box } from '@mui/material';
 import React from 'react';
 
 export const LoginPage: React.FC = () => {
-  const { onLoginRequest, isLoginLoading } = useAuth();
+  const { isLoginLoading } = useAuthSelectors();
+  const { onLoginRequest } = useAuthOrchestration();
 
   return (
     <Box>

@@ -2,13 +2,14 @@
 
 import React, { useCallback, useState } from 'react';
 import { LoginCredentials, LoginForm } from '@/features/auth';
-import { useAuth } from '@/shared/store';
+import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
 import { APP_CONFIG } from '@/shared/config';
 import { Box, Typography, Link as MuiLink } from '@mui/material';
 
 export const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
-  const { onLoginRequest, isLoginLoading } = useAuth();
+  const { isLoginLoading } = useAuthSelectors();
+  const { onLoginRequest } = useAuthOrchestration();
 
   const handleLogin = useCallback(
     (credentials: LoginCredentials) => {
