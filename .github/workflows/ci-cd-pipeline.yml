@@ -104,6 +104,27 @@ jobs:
           echo "📥 Installing backend dependencies..."
           npm install
 
+      - name: Upload root node_modules to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: root-node-modules
+          path: node_modules
+          retention-days: 1
+
+      - name: Upload frontend node_modules to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-node-modules
+          path: front/node_modules
+          retention-days: 1
+
+      - name: Upload backend node_modules to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-node-modules
+          path: backend/node_modules
+          retention-days: 1
+
       - name: Build frontend
         working-directory: ./front
         run: npm run build
@@ -113,27 +134,6 @@ jobs:
       - name: Build backend
         working-directory: ./backend
         run: npm run build
-
-      - name: Upload root node_modules
-        uses: actions/upload-artifact@v4
-        with:
-          name: root-node-modules
-          path: node_modules
-          retention-days: 1
-
-      - name: Upload frontend node_modules
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-node-modules
-          path: front/node_modules
-          retention-days: 1
-
-      - name: Upload backend node_modules
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-node-modules
-          path: backend/node_modules
-          retention-days: 1
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -176,6 +176,22 @@ jobs:
           name: backend-node-modules
           path: backend/node_modules
 
+      - name: Restore executable permissions
+        run: |
+          chmod +x front/node_modules/.bin/* 2>/dev/null || true
+          chmod +x backend/node_modules/.bin/* 2>/dev/null || true
+          chmod +x node_modules/.bin/* 2>/dev/null || true
+
+      - name: Verify binaries are accessible
+        working-directory: ./front
+        run: |
+          if [ ! -f node_modules/.bin/next ] && [ ! -L node_modules/.bin/next ]; then
+            echo "⚠️ next binary not found, checking node_modules..."
+            ls -la node_modules/.bin/ | head -5 || echo "node_modules/.bin directory not found"
+            echo "Reinstalling to fix binaries..."
+            npm install --prefer-offline --no-audit
+          fi
+
       - name: Lint frontend
         working-directory: ./front
         run: npm run lint
@@ -216,6 +232,12 @@ jobs:
         with:
           name: backend-node-modules
           path: backend/node_modules
+
+      - name: Restore executable permissions
+        run: |
+          chmod +x front/node_modules/.bin/* 2>/dev/null || true
+          chmod +x backend/node_modules/.bin/* 2>/dev/null || true
+          chmod +x node_modules/.bin/* 2>/dev/null || true
 
       - name: Run backend tests
         working-directory: ./backend
