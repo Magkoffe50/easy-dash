@@ -30,7 +30,7 @@ env:
 
 jobs:
   prepare:
-    name: Prepare Dependencies and Build
+    name: Prepare vendors
     runs-on: ubuntu-latest
     
     steps:
@@ -41,22 +41,68 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            front/package-lock.json
-            backend/package-lock.json
+
+      - name: Cache root node_modules
+        uses: actions/cache@v4
+        id: cache-root-modules
+        with:
+          path: node_modules
+          key: node-modules-root-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-root-${{ runner.os }}-
+
+      - name: Cache frontend node_modules
+        uses: actions/cache@v4
+        id: cache-frontend-modules
+        with:
+          path: front/node_modules
+          key: node-modules-frontend-${{ runner.os }}-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: |
+            node-modules-frontend-${{ runner.os }}-
+
+      - name: Cache backend node_modules
+        uses: actions/cache@v4
+        id: cache-backend-modules
+        with:
+          path: backend/node_modules
+          key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            node-modules-backend-${{ runner.os }}-
+
+      - name: Verify cache validity
+        run: |
+          if [ "${{ steps.cache-root-modules.outputs.cache-hit }}" == "true" ] && [ ! -d "node_modules" ]; then
+            echo "⚠️ Cache restored but node_modules missing - will reinstall"
+            echo "cache-hit=false" >> $GITHUB_ENV
+          fi
+          if [ "${{ steps.cache-frontend-modules.outputs.cache-hit }}" == "true" ] && [ ! -d "front/node_modules" ]; then
+            echo "⚠️ Frontend cache restored but node_modules missing - will reinstall"
+            echo "frontend-cache-hit=false" >> $GITHUB_ENV
+          fi
+          if [ "${{ steps.cache-backend-modules.outputs.cache-hit }}" == "true" ] && [ ! -d "backend/node_modules" ]; then
+            echo "⚠️ Backend cache restored but node_modules missing - will reinstall"
+            echo "backend-cache-hit=false" >> $GITHUB_ENV
+          fi
 
       - name: Install root dependencies
-        run: npm install
+        if: steps.cache-root-modules.outputs.cache-hit != 'true' || env.cache-hit == 'false'
+        run: |
+          echo "📥 Installing root dependencies..."
+          npm install
 
       - name: Install frontend dependencies
+        if: steps.cache-frontend-modules.outputs.cache-hit != 'true' || env.frontend-cache-hit == 'false'
         working-directory: ./front
-        run: npm install
+        run: |
+          echo "📥 Installing frontend dependencies..."
+          npm install
 
       - name: Install backend dependencies
+        if: steps.cache-backend-modules.outputs.cache-hit != 'true' || env.backend-cache-hit == 'false'
         working-directory: ./backend
-        run: npm install
+        run: |
+          echo "📥 Installing backend dependencies..."
+          npm install
 
       - name: Build frontend
         working-directory: ./front
@@ -173,7 +219,7 @@ jobs:
 
       - name: Run backend tests
         working-directory: ./backend
-        run: npm test -- --passWithNoTests --coverage
+        run: npx jest --passWithNoTests --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
