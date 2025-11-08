@@ -202,11 +202,26 @@ jobs:
 
       - name: Restore backend node_modules from cache
         uses: actions/cache/restore@v4
+        id: cache-backend-test
         with:
           path: backend/node_modules
           key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
           restore-keys: |
             node-modules-backend-${{ runner.os }}-
+
+      - name: Verify dependencies
+        working-directory: ./backend
+        run: |
+          if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/jest" ]; then
+            echo "⚠️ Dependencies missing or incomplete, installing..."
+            npm install --prefer-offline --no-audit
+          else
+            echo "✅ Dependencies found, verifying ts-jest..."
+            if [ ! -d "node_modules/ts-jest" ]; then
+              echo "⚠️ ts-jest missing, reinstalling..."
+              npm install --prefer-offline --no-audit
+            fi
+          fi
 
       - name: Run backend tests
         working-directory: ./backend
