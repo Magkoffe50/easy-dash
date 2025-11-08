@@ -209,13 +209,20 @@ jobs:
           restore-keys: |
             node-modules-backend-${{ runner.os }}-
 
-      - name: Install/verify dependencies
+      - name: Install dependencies
         working-directory: ./backend
         run: |
-          echo "Installing dependencies to ensure completeness..."
-          npm install --prefer-offline --no-audit
-          echo "Verifying ts-jest installation..."
-          npm ls ts-jest || echo "ts-jest check failed"
+          echo "Checking current state..."
+          ls -la node_modules/.bin/ | grep -E '(jest|ts-jest)' || echo "Binaries not found"
+          echo ""
+          echo "Removing corrupted cache and reinstalling..."
+          rm -rf node_modules
+          npm install
+          echo ""
+          echo "Verifying installation..."
+          npm ls ts-jest
+          npm ls jest
+          ls -la node_modules/.bin/jest
 
       - name: Run backend tests
         working-directory: ./backend
