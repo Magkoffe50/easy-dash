@@ -4,7 +4,7 @@ WORKDIR /app
 
 FROM base AS dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 FROM base AS build
 COPY --from=dependencies /app/node_modules ./node_modules
