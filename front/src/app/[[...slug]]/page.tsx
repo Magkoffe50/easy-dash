@@ -11,9 +11,9 @@ import { ProfilePage } from '@/pages-layer/ProfilePage';
 import { SettingsPage } from '@/pages-layer/SettingsPage';
 
 interface DynamicPageProps {
-  params: {
+  params: Promise<{
     slug?: string[];
-  };
+  }>;
 }
 
 // Map routes to components using centralized configuration
@@ -39,7 +39,7 @@ export async function generateMetadata({
 }: DynamicPageProps): Promise<Metadata> {
   const { slug = [] } = await params;
 
-  const path = slug ? `/${slug.join('/')}` : '/';
+  const path = slug.length > 0 ? `/${slug.join('/')}` : '/';
   const metadata = getRouteMetadata(path);
 
   if (!metadata) {
@@ -57,7 +57,7 @@ export async function generateMetadata({
 export default async function DynamicPage({ params }: DynamicPageProps) {
   const { slug = [] } = await params;
 
-  const path = slug ? `/${slug.join('/')}` : '/';
+  const path = slug.length > 0 ? `/${slug.join('/')}` : '/';
   const Component = ROUTE_COMPONENTS[path];
 
   if (!Component) {
