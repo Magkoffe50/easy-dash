@@ -29,8 +29,8 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  lint:
-    name: Lint Code
+  prepare:
+    name: Prepare Dependencies and Build
     runs-on: ubuntu-latest
     
     steps:
@@ -47,85 +47,47 @@ jobs:
             front/package-lock.json
             backend/package-lock.json
 
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd front && npm ci
-          cd ../backend && npm ci
+      - name: Install root dependencies
+        run: npm install
 
-      - name: Lint frontend
-        run: |
-          cd front && npm run lint
+      - name: Install frontend dependencies
+        working-directory: ./front
+        run: npm install
 
-      - name: Lint backend
-        run: |
-          cd backend && npm run lint
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    if: ${{ !inputs.skip_tests || github.event_name == 'push' || github.event_name == 'pull_request' }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd front && npm ci
-          cd ../backend && npm ci
-
-      - name: Run backend tests
-        run: |
-          cd backend && npm test -- --passWithNoTests --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        if: always()
-        with:
-          files: ./backend/coverage/coverage-final.json
-          flags: backend
-          name: backend-coverage
-        continue-on-error: true
-
-  build:
-    name: Build Applications
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    if: ${{ always() && (needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests)) }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd front && npm ci
-          cd ../backend && npm ci
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
 
       - name: Build frontend
-        run: |
-          cd front && npm run build
+        working-directory: ./front
+        run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL || 'http://localhost:3001' }}
 
       - name: Build backend
-        run: |
-          cd backend && npm run build
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Upload root node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: root-node-modules
+          path: node_modules
+          retention-days: 1
+
+      - name: Upload frontend node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-node-modules
+          path: front/node_modules
+          retention-days: 1
+
+      - name: Upload backend node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-node-modules
+          path: backend/node_modules
+          retention-days: 1
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -136,11 +98,97 @@ jobs:
             backend/dist
           retention-days: 7
 
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    needs: prepare
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download root node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: root-node-modules
+          path: node_modules
+
+      - name: Download frontend node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-node-modules
+          path: front/node_modules
+
+      - name: Download backend node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-node-modules
+          path: backend/node_modules
+
+      - name: Lint frontend
+        working-directory: ./front
+        run: npm run lint
+
+      - name: Lint backend
+        working-directory: ./backend
+        run: npm run lint
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ !inputs.skip_tests || github.event_name == 'push' || github.event_name == 'pull_request' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download root node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: root-node-modules
+          path: node_modules
+
+      - name: Download frontend node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-node-modules
+          path: front/node_modules
+
+      - name: Download backend node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-node-modules
+          path: backend/node_modules
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test -- --passWithNoTests --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./backend/coverage/coverage-final.json
+          flags: backend
+          name: backend-coverage
+        continue-on-error: true
+
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint, test]
-    if: ${{ always() && (needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests)) }}
+    needs: [prepare, lint, test]
+    if: ${{ always() && (needs.prepare.result == 'success' && needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests)) }}
     
     steps:
       - name: Checkout code
@@ -177,7 +225,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [build, build-docker]
+    needs: [prepare, lint, test, build-docker]
     if: ${{ (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging') || (github.ref == 'refs/heads/main' && github.event_name == 'push') }}
     environment:
       name: staging
@@ -186,6 +234,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
       - name: Deployment notification
         run: |
@@ -215,7 +268,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build, build-docker]
+    needs: [prepare, lint, test, build-docker]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
     environment:
       name: production
@@ -224,6 +277,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
       - name: Deployment notification
         run: |
@@ -245,4 +303,3 @@ jobs:
         run: |
           echo "✅ Successfully deployed to PRODUCTION!"
           echo "🌐 Production URL: ${{ steps.deploy-info.outputs.url }}"
-
