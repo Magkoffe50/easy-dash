@@ -13,7 +13,10 @@ import {
 } from '@mui/material';
 import { RegisterData } from '../../model/types';
 import Link from 'next/link';
-import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
+import {
+  useAuthSelectors,
+  useAuthOrchestration,
+} from '@/shared/store/auth/hooks';
 
 export const RegisterForm: FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
@@ -32,7 +35,7 @@ export const RegisterForm: FC = () => {
 
       onRegisterRequest(formData);
     },
-    [formData],
+    [formData, onRegisterRequest],
   );
 
   const handleChange =

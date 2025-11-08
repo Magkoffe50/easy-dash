@@ -16,6 +16,9 @@ import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { User } from '../users/user.entity';
+
+type UserWithoutPassword = Omit<User, 'password'>;
 
 @ApiTags('auth')
 @Controller('auth')
@@ -52,16 +55,16 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.validateUser(
+    const user = (await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
-    );
+    )) as UserWithoutPassword | null;
 
     if (!user) {
       return { message: 'Invalid credentials' };
     }
 
-    const result = await this.authService.login(user);
+    const result = this.authService.login(user);
 
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
@@ -78,7 +81,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@Res({ passthrough: true }) res: Response) {
+  logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');
     return { message: 'Logged out successfully' };
   }
@@ -88,7 +91,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'Current user info' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@Req() req: Request) {
+  getProfile(@Req() req: Request) {
     return req.user;
   }
 }
