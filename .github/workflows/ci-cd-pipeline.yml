@@ -176,19 +176,22 @@ jobs:
           name: backend-node-modules
           path: backend/node_modules
 
-      - name: Restore executable permissions
+      - name: Restore executable permissions and fix binaries
         run: |
-          chmod +x front/node_modules/.bin/* 2>/dev/null || true
-          chmod +x backend/node_modules/.bin/* 2>/dev/null || true
-          chmod +x node_modules/.bin/* 2>/dev/null || true
-
-      - name: Verify binaries are accessible
-        working-directory: ./front
-        run: |
-          if [ ! -f node_modules/.bin/next ] && [ ! -L node_modules/.bin/next ]; then
-            echo "⚠️ next binary not found, checking node_modules..."
-            ls -la node_modules/.bin/ | head -5 || echo "node_modules/.bin directory not found"
-            echo "Reinstalling to fix binaries..."
+          echo "Restoring permissions for all node_modules..."
+          find front/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          find backend/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          find node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          
+          echo "Checking frontend binaries..."
+          cd front
+          if ! npm ls next > /dev/null 2>&1; then
+            echo "⚠️ next not properly installed, reinstalling..."
+            npm install --prefer-offline --no-audit
+          fi
+          cd ../backend
+          if ! npm ls eslint > /dev/null 2>&1; then
+            echo "⚠️ eslint not properly installed, reinstalling..."
             npm install --prefer-offline --no-audit
           fi
 
@@ -233,11 +236,19 @@ jobs:
           name: backend-node-modules
           path: backend/node_modules
 
-      - name: Restore executable permissions
+      - name: Restore executable permissions and fix binaries
         run: |
-          chmod +x front/node_modules/.bin/* 2>/dev/null || true
-          chmod +x backend/node_modules/.bin/* 2>/dev/null || true
-          chmod +x node_modules/.bin/* 2>/dev/null || true
+          echo "Restoring permissions for all node_modules..."
+          find front/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          find backend/node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          find node_modules/.bin -type f -exec chmod +x {} \; 2>/dev/null || true
+          
+          echo "Checking jest binary..."
+          cd backend
+          if ! npm ls jest > /dev/null 2>&1; then
+            echo "⚠️ jest not properly installed, reinstalling..."
+            npm install --prefer-offline --no-audit
+          fi
 
       - name: Run backend tests
         working-directory: ./backend
