@@ -17,8 +17,15 @@ async function bootstrap() {
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
   // Enable CORS
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    frontendUrl,
+  ].filter(Boolean);
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: allowedOrigins,
     credentials: true,
   });
 

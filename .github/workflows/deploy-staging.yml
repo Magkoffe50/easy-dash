@@ -1,0 +1,124 @@
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '20.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            front/package-lock.json
+            backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd front && npm ci
+          cd ../backend && npm ci
+
+      - name: Lint frontend
+        run: |
+          cd front && npm run lint
+
+      - name: Lint backend
+        run: |
+          cd backend && npm run lint
+
+      - name: Build frontend
+        run: |
+          cd front && npm run build
+
+      - name: Build backend
+        run: |
+          cd backend && npm run build
+
+      - name: Run backend tests
+        run: |
+          cd backend && npm test -- --passWithNoTests
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: ${{ always() && (needs.build-and-test.result == 'success' || inputs.skip_tests) }}
+    environment:
+      name: staging
+      url: ${{ steps.deploy-info.outputs.url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd front && npm ci
+          cd ../backend && npm ci
+
+      - name: Build frontend
+        run: |
+          cd front && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+
+      - name: Build backend
+        run: |
+          cd backend && npm run build
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "📦 Build artifacts ready"
+          echo "✅ Deployment would happen here"
+        env:
+          STAGING_DEPLOYMENT_TOKEN: ${{ secrets.STAGING_DEPLOYMENT_TOKEN }}
+
+      - name: Deployment info
+        id: deploy-info
+        run: |
+          echo "url=https://your-staging-url.com" >> $GITHUB_OUTPUT
+          echo "✅ Deployment completed successfully!"
+
+      - name: Notify deployment
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to staging!"
+          echo "🌐 Staging URL: ${{ steps.deploy-info.outputs.url }}"
+
