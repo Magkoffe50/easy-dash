@@ -178,11 +178,11 @@ jobs:
 
       - name: Lint frontend
         working-directory: ./front
-        run: npx next lint
+        run: npm run lint
 
       - name: Lint backend
         working-directory: ./backend
-        run: npx eslint "{src,apps,libs,test}/**/*.ts" --fix
+        run: npm run lint
 
   test:
     name: Run Tests
@@ -219,7 +219,7 @@ jobs:
 
       - name: Run backend tests
         working-directory: ./backend
-        run: npx jest --passWithNoTests --coverage
+        run: npm test -- --passWithNoTests --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
