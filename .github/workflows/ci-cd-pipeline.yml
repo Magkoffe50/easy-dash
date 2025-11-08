@@ -185,13 +185,29 @@ jobs:
           
           echo "Checking frontend binaries..."
           cd front
-          if ! npm ls next > /dev/null 2>&1; then
-            echo "⚠️ next not properly installed, reinstalling..."
+          if [ ! -f node_modules/.bin/next ] && [ ! -L node_modules/.bin/next ]; then
+            echo "⚠️ next binary not found, reinstalling..."
             npm install --prefer-offline --no-audit
           fi
+          echo "Verifying next is executable..."
+          chmod +x node_modules/.bin/next 2>/dev/null || true
+          echo "Testing if next can run..."
+          if ! node_modules/.bin/next --version > /dev/null 2>&1; then
+            echo "⚠️ next cannot run, reinstalling..."
+            npm install --prefer-offline --no-audit
+          fi
+          
+          echo "Checking backend binaries..."
           cd ../backend
-          if ! npm ls eslint > /dev/null 2>&1; then
-            echo "⚠️ eslint not properly installed, reinstalling..."
+          if [ ! -f node_modules/.bin/eslint ] && [ ! -L node_modules/.bin/eslint ]; then
+            echo "⚠️ eslint binary not found, reinstalling..."
+            npm install --prefer-offline --no-audit
+          fi
+          echo "Verifying eslint is executable..."
+          chmod +x node_modules/.bin/eslint 2>/dev/null || true
+          echo "Testing if eslint can run..."
+          if ! node_modules/.bin/eslint --version > /dev/null 2>&1; then
+            echo "⚠️ eslint cannot run, reinstalling..."
             npm install --prefer-offline --no-audit
           fi
 
@@ -245,8 +261,15 @@ jobs:
           
           echo "Checking jest binary..."
           cd backend
-          if ! npm ls jest > /dev/null 2>&1; then
-            echo "⚠️ jest not properly installed, reinstalling..."
+          if [ ! -f node_modules/.bin/jest ] && [ ! -L node_modules/.bin/jest ]; then
+            echo "⚠️ jest binary not found, reinstalling..."
+            npm install --prefer-offline --no-audit
+          fi
+          echo "Verifying jest is executable..."
+          chmod +x node_modules/.bin/jest 2>/dev/null || true
+          echo "Testing if jest can run..."
+          if ! node_modules/.bin/jest --version > /dev/null 2>&1; then
+            echo "⚠️ jest cannot run, reinstalling..."
             npm install --prefer-offline --no-audit
           fi
 
@@ -319,30 +342,82 @@ jobs:
         with:
           name: build-artifacts
 
-      - name: Deployment notification
+      - name: Install Railway CLI
         run: |
-          echo "🚀 Deploying to staging environment..."
-          echo "📦 Build artifacts ready"
-          echo "🐳 Docker images ready"
-          echo ""
-          echo "✅ Ready for deployment!"
-          echo "📝 Next steps:"
-          echo "1. Railway will auto-deploy on push to main"
-          echo "2. Or manually trigger in Railway dashboard"
-        env:
-          STAGING_DEPLOYMENT_TOKEN: ${{ secrets.STAGING_DEPLOYMENT_TOKEN }}
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Login to Railway
+        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        continue-on-error: true
+
+      - name: Deploy backend to Railway
+        working-directory: ./backend
+        run: |
+          if [ -n "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" ]; then
+            echo "🚀 Deploying backend to Railway..."
+            railway link ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
+            railway up --service ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
+          else
+            echo "⚠️ RAILWAY_BACKEND_SERVICE_ID not set, skipping backend deployment"
+            echo "💡 Set this secret in GitHub to enable Railway deployment"
+          fi
+        continue-on-error: true
+
+      - name: Deploy frontend to Railway
+        working-directory: ./front
+        run: |
+          if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
+            echo "🚀 Deploying frontend to Railway..."
+            railway link ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}
+            railway up --service ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}
+          else
+            echo "⚠️ RAILWAY_FRONTEND_SERVICE_ID not set, skipping frontend deployment"
+            echo "💡 Set this secret in GitHub to enable Railway deployment"
+          fi
+        continue-on-error: true
+
+      - name: Get Railway service URLs
+        id: railway-urls
+        run: |
+          if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
+            FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+            echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" ]; then
+            BACKEND_URL=$(railway status --service ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+            echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
 
       - name: Deployment info
         id: deploy-info
         run: |
-          echo "url=https://your-staging-url.com" >> $GITHUB_OUTPUT
-          echo "✅ Deployment pipeline completed!"
+          FRONTEND_URL="${{ steps.railway-urls.outputs.frontend_url }}"
+          BACKEND_URL="${{ steps.railway-urls.outputs.backend_url }}"
+          
+          if [ -n "$FRONTEND_URL" ]; then
+            echo "url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Frontend deployed: https://$FRONTEND_URL"
+          elif [ -n "$BACKEND_URL" ]; then
+            echo "url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Backend deployed: https://$BACKEND_URL"
+          else
+            echo "url=https://your-staging-url.railway.app" >> $GITHUB_OUTPUT
+            echo "✅ Deployment pipeline completed!"
+          fi
 
       - name: Notify deployment
         if: success()
         run: |
           echo "✅ Successfully deployed to staging!"
           echo "🌐 Staging URL: ${{ steps.deploy-info.outputs.url }}"
+          if [ -n "${{ steps.railway-urls.outputs.frontend_url }}" ]; then
+            echo "📱 Frontend: https://${{ steps.railway-urls.outputs.frontend_url }}"
+          fi
+          if [ -n "${{ steps.railway-urls.outputs.backend_url }}" ]; then
+            echo "🔧 Backend: https://${{ steps.railway-urls.outputs.backend_url }}"
+          fi
 
   deploy-production:
     name: Deploy to Production
@@ -362,23 +437,79 @@ jobs:
         with:
           name: build-artifacts
 
-      - name: Deployment notification
+      - name: Install Railway CLI
         run: |
-          echo "🚀 Deploying to PRODUCTION environment..."
-          echo "⚠️  This is a production deployment!"
-          echo "📦 Build artifacts ready"
-          echo "🐳 Docker images ready"
-        env:
-          PRODUCTION_DEPLOYMENT_TOKEN: ${{ secrets.PRODUCTION_DEPLOYMENT_TOKEN }}
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Login to Railway
+        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        continue-on-error: true
+
+      - name: Deploy backend to Railway (Production)
+        working-directory: ./backend
+        run: |
+          if [ -n "${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
+            echo "🚀 Deploying backend to Railway PRODUCTION..."
+            railway link ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}
+            railway up --service ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}
+          else
+            echo "⚠️ RAILWAY_BACKEND_PRODUCTION_SERVICE_ID not set, skipping backend deployment"
+            echo "💡 Set this secret in GitHub to enable Railway production deployment"
+          fi
+        continue-on-error: true
+
+      - name: Deploy frontend to Railway (Production)
+        working-directory: ./front
+        run: |
+          if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
+            echo "🚀 Deploying frontend to Railway PRODUCTION..."
+            railway link ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}
+            railway up --service ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}
+          else
+            echo "⚠️ RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID not set, skipping frontend deployment"
+            echo "💡 Set this secret in GitHub to enable Railway production deployment"
+          fi
+        continue-on-error: true
+
+      - name: Get Railway service URLs
+        id: railway-urls
+        run: |
+          if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
+            FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+            echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
+            BACKEND_URL=$(railway status --service ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+            echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
 
       - name: Deployment info
         id: deploy-info
         run: |
-          echo "url=https://your-production-url.com" >> $GITHUB_OUTPUT
-          echo "✅ Production deployment pipeline completed!"
+          FRONTEND_URL="${{ steps.railway-urls.outputs.frontend_url }}"
+          BACKEND_URL="${{ steps.railway-urls.outputs.backend_url }}"
+          
+          if [ -n "$FRONTEND_URL" ]; then
+            echo "url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Frontend deployed: https://$FRONTEND_URL"
+          elif [ -n "$BACKEND_URL" ]; then
+            echo "url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Backend deployed: https://$BACKEND_URL"
+          else
+            echo "url=https://your-production-url.railway.app" >> $GITHUB_OUTPUT
+            echo "✅ Production deployment pipeline completed!"
+          fi
 
       - name: Notify deployment
         if: success()
         run: |
           echo "✅ Successfully deployed to PRODUCTION!"
           echo "🌐 Production URL: ${{ steps.deploy-info.outputs.url }}"
+          if [ -n "${{ steps.railway-urls.outputs.frontend_url }}" ]; then
+            echo "📱 Frontend: https://${{ steps.railway-urls.outputs.frontend_url }}"
+          fi
+          if [ -n "${{ steps.railway-urls.outputs.backend_url }}" ]; then
+            echo "🔧 Backend: https://${{ steps.railway-urls.outputs.backend_url }}"
+          fi
