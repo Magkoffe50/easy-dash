@@ -27,6 +27,9 @@ on:
 
 env:
   NODE_VERSION: '20.x'
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository }}/backend
+  FRONTEND_IMAGE: ${{ github.repository }}/frontend
 
 jobs:
   prepare:
@@ -229,10 +232,13 @@ jobs:
         continue-on-error: true
 
   build-docker:
-    name: Build Docker Images
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
     needs: [prepare, lint, test]
     if: ${{ always() && (needs.prepare.result == 'success' && needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests)) }}
+    permissions:
+      contents: read
+      packages: write
     
     steps:
       - name: Checkout code
@@ -241,97 +247,174 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build backend Docker image
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          push: false
-          load: true
-          tags: easy-dash-backend:${{ github.sha }}
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build frontend Docker image
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push frontend Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./front
           file: ./front/Dockerfile
-          push: false
-          load: true
-          tags: easy-dash-frontend:${{ github.sha }}
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Docker images built
+      - name: Output image tags
         run: |
-          echo "✅ Docker images built successfully!"
-          docker images | grep easy-dash || echo "Images built in cache (not loaded to local daemon)"
+          echo "✅ Docker images built and pushed successfully!"
+          echo "Backend: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}"
+          echo "Frontend: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}"
 
   deploy-staging:
-    name: Deploy to Staging
+    name: Deploy to Staging (Render)
     runs-on: ubuntu-latest
     needs: [prepare, lint, test, build-docker]
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging') || (github.ref == 'refs/heads/main' && github.event_name == 'push') }}
+    if: ${{ always() && (needs.prepare.result == 'success' && needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests) && needs.build-docker.result == 'success') && ((github.event_name == 'workflow_dispatch' && inputs.environment == 'staging') || (github.ref == 'refs/heads/main' && github.event_name == 'push')) }}
     environment:
       name: staging
       url: ${{ steps.deploy-info.outputs.url }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Install Railway CLI
-        run: |
-          curl -fsSL https://railway.app/install.sh | sh
-          echo "$HOME/.railway/bin" >> $GITHUB_PATH
-
-      - name: Deploy backend to Railway
-        working-directory: ./backend
+      - name: Deploy backend to Render
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" ]; then
-            echo "🚀 Deploying backend to Railway..."
-            railway link ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
-            railway up --service ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
+          if [ -n "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            echo "🚀 Deploying backend to Render..."
+            echo "Image: $BACKEND_IMAGE"
+            
+            DEPLOY_RESPONSE=$(curl -s -X POST \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"clearCache\": false,
+                \"image\": {
+                  \"type\": \"docker\",
+                  \"ref\": \"$BACKEND_IMAGE\",
+                  \"registryCredential\": {
+                    \"type\": \"ghcr\",
+                    \"username\": \"${{ github.actor }}\",
+                    \"password\": \"$GITHUB_TOKEN\"
+                  }
+                }
+              }" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys || echo "")
+            
+            if [ -n "$DEPLOY_RESPONSE" ]; then
+              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
+              if [ -n "$DEPLOY_ID" ]; then
+                echo "✅ Backend deployment initiated: $DEPLOY_ID"
+                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Failed to get deploy ID from response"
+                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
+              fi
+            else
+              echo "❌ Failed to create backend deployment"
+            fi
           else
-            echo "⚠️ RAILWAY_BACKEND_SERVICE_ID not set, skipping backend deployment"
-            echo "💡 Set this secret in GitHub to enable Railway deployment"
+            echo "⚠️ RENDER_BACKEND_SERVICE_ID or RENDER_API_KEY not set, skipping backend deployment"
           fi
         continue-on-error: true
 
-      - name: Deploy frontend to Railway
-        working-directory: ./front
+      - name: Deploy frontend to Render
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
-            echo "🚀 Deploying frontend to Railway..."
-            railway link ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}
-            railway up --service ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}
+          if [ -n "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            echo "🚀 Deploying frontend to Render..."
+            echo "Image: $FRONTEND_IMAGE"
+            
+            DEPLOY_RESPONSE=$(curl -s -X POST \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"clearCache\": false,
+                \"image\": {
+                  \"type\": \"docker\",
+                  \"ref\": \"$FRONTEND_IMAGE\",
+                  \"registryCredential\": {
+                    \"type\": \"ghcr\",
+                    \"username\": \"${{ github.actor }}\",
+                    \"password\": \"$GITHUB_TOKEN\"
+                  }
+                }
+              }" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys || echo "")
+            
+            if [ -n "$DEPLOY_RESPONSE" ]; then
+              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
+              if [ -n "$DEPLOY_ID" ]; then
+                echo "✅ Frontend deployment initiated: $DEPLOY_ID"
+                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Failed to get deploy ID from response"
+                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
+              fi
+            else
+              echo "❌ Failed to create frontend deployment"
+            fi
           else
-            echo "⚠️ RAILWAY_FRONTEND_SERVICE_ID not set, skipping frontend deployment"
-            echo "💡 Set this secret in GitHub to enable Railway deployment"
+            echo "⚠️ RENDER_FRONTEND_SERVICE_ID or RENDER_API_KEY not set, skipping frontend deployment"
           fi
         continue-on-error: true
 
-      - name: Get Railway service URLs
-        id: railway-urls
+      - name: Get Render service URLs
+        id: render-urls
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
-            FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+          if [ -n "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            FRONTEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }} || echo "")
+            FRONTEND_URL=$(echo "$FRONTEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
             echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
           fi
-          if [ -n "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" ]; then
-            BACKEND_URL=$(railway status --service ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+          if [ -n "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            BACKEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }} || echo "")
+            BACKEND_URL=$(echo "$BACKEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
             echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
@@ -339,96 +422,145 @@ jobs:
       - name: Deployment info
         id: deploy-info
         run: |
-          FRONTEND_URL="${{ steps.railway-urls.outputs.frontend_url }}"
-          BACKEND_URL="${{ steps.railway-urls.outputs.backend_url }}"
+          FRONTEND_URL="${{ steps.render-urls.outputs.frontend_url }}"
+          BACKEND_URL="${{ steps.render-urls.outputs.backend_url }}"
           
           if [ -n "$FRONTEND_URL" ]; then
-            echo "url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Frontend deployed: https://$FRONTEND_URL"
+            echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Frontend deployed: $FRONTEND_URL"
           elif [ -n "$BACKEND_URL" ]; then
-            echo "url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Backend deployed: https://$BACKEND_URL"
+            echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Backend deployed: $BACKEND_URL"
           else
-            echo "url=https://your-staging-url.railway.app" >> $GITHUB_OUTPUT
+            echo "url=https://your-staging-url.onrender.com" >> $GITHUB_OUTPUT
             echo "✅ Deployment pipeline completed!"
           fi
 
       - name: Notify deployment
         if: success()
         run: |
-          echo "✅ Successfully deployed to staging!"
+          echo "✅ Successfully deployed to staging on Render!"
           echo "🌐 Staging URL: ${{ steps.deploy-info.outputs.url }}"
-          if [ -n "${{ steps.railway-urls.outputs.frontend_url }}" ]; then
-            echo "📱 Frontend: https://${{ steps.railway-urls.outputs.frontend_url }}"
+          if [ -n "${{ steps.render-urls.outputs.frontend_url }}" ]; then
+            echo "📱 Frontend: ${{ steps.render-urls.outputs.frontend_url }}"
           fi
-          if [ -n "${{ steps.railway-urls.outputs.backend_url }}" ]; then
-            echo "🔧 Backend: https://${{ steps.railway-urls.outputs.backend_url }}"
+          if [ -n "${{ steps.render-urls.outputs.backend_url }}" ]; then
+            echo "🔧 Backend: ${{ steps.render-urls.outputs.backend_url }}"
           fi
 
   deploy-production:
-    name: Deploy to Production
+    name: Deploy to Production (Render)
     runs-on: ubuntu-latest
     needs: [prepare, lint, test, build-docker]
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
+    if: ${{ always() && (needs.prepare.result == 'success' && needs.lint.result == 'success' && (needs.test.result == 'success' || inputs.skip_tests) && needs.build-docker.result == 'success') && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
     environment:
       name: production
       url: ${{ steps.deploy-info.outputs.url }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Install Railway CLI
-        run: |
-          curl -fsSL https://railway.app/install.sh | sh
-          echo "$HOME/.railway/bin" >> $GITHUB_PATH
-
-      - name: Deploy backend to Railway (Production)
-        working-directory: ./backend
+      - name: Deploy backend to Render (Production)
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
-            echo "🚀 Deploying backend to Railway PRODUCTION..."
-            railway link ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}
-            railway up --service ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}
+          if [ -n "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            echo "🚀 Deploying backend to Render PRODUCTION..."
+            echo "Image: $BACKEND_IMAGE"
+            
+            DEPLOY_RESPONSE=$(curl -s -X POST \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"clearCache\": false,
+                \"image\": {
+                  \"type\": \"docker\",
+                  \"ref\": \"$BACKEND_IMAGE\",
+                  \"registryCredential\": {
+                    \"type\": \"ghcr\",
+                    \"username\": \"${{ github.actor }}\",
+                    \"password\": \"$GITHUB_TOKEN\"
+                  }
+                }
+              }" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys || echo "")
+            
+            if [ -n "$DEPLOY_RESPONSE" ]; then
+              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
+              if [ -n "$DEPLOY_ID" ]; then
+                echo "✅ Backend production deployment initiated: $DEPLOY_ID"
+                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Failed to get deploy ID from response"
+                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
+              fi
+            else
+              echo "❌ Failed to create backend production deployment"
+            fi
           else
-            echo "⚠️ RAILWAY_BACKEND_PRODUCTION_SERVICE_ID not set, skipping backend deployment"
-            echo "💡 Set this secret in GitHub to enable Railway production deployment"
+            echo "⚠️ RENDER_BACKEND_PRODUCTION_SERVICE_ID or RENDER_API_KEY not set, skipping backend deployment"
           fi
         continue-on-error: true
 
-      - name: Deploy frontend to Railway (Production)
-        working-directory: ./front
+      - name: Deploy frontend to Render (Production)
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
-            echo "🚀 Deploying frontend to Railway PRODUCTION..."
-            railway link ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}
-            railway up --service ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}
+          if [ -n "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            echo "🚀 Deploying frontend to Render PRODUCTION..."
+            echo "Image: $FRONTEND_IMAGE"
+            
+            DEPLOY_RESPONSE=$(curl -s -X POST \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"clearCache\": false,
+                \"image\": {
+                  \"type\": \"docker\",
+                  \"ref\": \"$FRONTEND_IMAGE\",
+                  \"registryCredential\": {
+                    \"type\": \"ghcr\",
+                    \"username\": \"${{ github.actor }}\",
+                    \"password\": \"$GITHUB_TOKEN\"
+                  }
+                }
+              }" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys || echo "")
+            
+            if [ -n "$DEPLOY_RESPONSE" ]; then
+              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
+              if [ -n "$DEPLOY_ID" ]; then
+                echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
+                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ Failed to get deploy ID from response"
+                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
+              fi
+            else
+              echo "❌ Failed to create frontend production deployment"
+            fi
           else
-            echo "⚠️ RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID not set, skipping frontend deployment"
-            echo "💡 Set this secret in GitHub to enable Railway production deployment"
+            echo "⚠️ RENDER_FRONTEND_PRODUCTION_SERVICE_ID or RENDER_API_KEY not set, skipping frontend deployment"
           fi
         continue-on-error: true
 
-      - name: Get Railway service URLs
-        id: railway-urls
+      - name: Get Render service URLs
+        id: render-urls
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
-            FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+          if [ -n "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            FRONTEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }} || echo "")
+            FRONTEND_URL=$(echo "$FRONTEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
             echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
           fi
-          if [ -n "${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
-            BACKEND_URL=$(railway status --service ${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
+          if [ -n "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
+            BACKEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }} || echo "")
+            BACKEND_URL=$(echo "$BACKEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
             echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
@@ -436,28 +568,28 @@ jobs:
       - name: Deployment info
         id: deploy-info
         run: |
-          FRONTEND_URL="${{ steps.railway-urls.outputs.frontend_url }}"
-          BACKEND_URL="${{ steps.railway-urls.outputs.backend_url }}"
+          FRONTEND_URL="${{ steps.render-urls.outputs.frontend_url }}"
+          BACKEND_URL="${{ steps.render-urls.outputs.backend_url }}"
           
           if [ -n "$FRONTEND_URL" ]; then
-            echo "url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Frontend deployed: https://$FRONTEND_URL"
+            echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Frontend deployed: $FRONTEND_URL"
           elif [ -n "$BACKEND_URL" ]; then
-            echo "url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Backend deployed: https://$BACKEND_URL"
+            echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
+            echo "✅ Backend deployed: $BACKEND_URL"
           else
-            echo "url=https://your-production-url.railway.app" >> $GITHUB_OUTPUT
+            echo "url=https://your-production-url.onrender.com" >> $GITHUB_OUTPUT
             echo "✅ Production deployment pipeline completed!"
           fi
 
       - name: Notify deployment
         if: success()
         run: |
-          echo "✅ Successfully deployed to PRODUCTION!"
+          echo "✅ Successfully deployed to PRODUCTION on Render!"
           echo "🌐 Production URL: ${{ steps.deploy-info.outputs.url }}"
-          if [ -n "${{ steps.railway-urls.outputs.frontend_url }}" ]; then
-            echo "📱 Frontend: https://${{ steps.railway-urls.outputs.frontend_url }}"
+          if [ -n "${{ steps.render-urls.outputs.frontend_url }}" ]; then
+            echo "📱 Frontend: ${{ steps.render-urls.outputs.frontend_url }}"
           fi
-          if [ -n "${{ steps.railway-urls.outputs.backend_url }}" ]; then
-            echo "🔧 Backend: https://${{ steps.railway-urls.outputs.backend_url }}"
+          if [ -n "${{ steps.render-urls.outputs.backend_url }}" ]; then
+            echo "🔧 Backend: ${{ steps.render-urls.outputs.backend_url }}"
           fi
