@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import dotenv from 'dotenv';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+import { getCorsConfig } from './config/cors.config';
 
 const envFile =
   process.env.NODE_ENV === 'production'
@@ -16,18 +17,7 @@ async function bootstrap() {
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-  // Enable CORS
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    frontendUrl,
-  ].filter(Boolean);
-
-  app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-  });
+  app.enableCors(getCorsConfig());
 
   // Cookie parser middleware
   app.use(cookieParser());
