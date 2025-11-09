@@ -291,12 +291,10 @@ jobs:
           curl -fsSL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
-      - name: Login to Railway
-        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
-        continue-on-error: true
-
       - name: Deploy backend to Railway
         working-directory: ./backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" ]; then
             echo "🚀 Deploying backend to Railway..."
@@ -310,6 +308,8 @@ jobs:
 
       - name: Deploy frontend to Railway
         working-directory: ./front
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
             echo "🚀 Deploying frontend to Railway..."
@@ -323,6 +323,8 @@ jobs:
 
       - name: Get Railway service URLs
         id: railway-urls
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" ]; then
             FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
@@ -386,12 +388,10 @@ jobs:
           curl -fsSL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
-      - name: Login to Railway
-        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
-        continue-on-error: true
-
       - name: Deploy backend to Railway (Production)
         working-directory: ./backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
             echo "🚀 Deploying backend to Railway PRODUCTION..."
@@ -405,6 +405,8 @@ jobs:
 
       - name: Deploy frontend to Railway (Production)
         working-directory: ./front
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
             echo "🚀 Deploying frontend to Railway PRODUCTION..."
@@ -418,6 +420,8 @@ jobs:
 
       - name: Get Railway service URLs
         id: railway-urls
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -n "${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
             FRONTEND_URL=$(railway status --service ${{ secrets.RAILWAY_FRONTEND_PRODUCTION_SERVICE_ID }} --json 2>/dev/null | jq -r '.service.domain' || echo "")
