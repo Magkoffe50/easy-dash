@@ -3,9 +3,6 @@
 export const APP_NAME = 'Easy Dash';
 export const APP_VERSION = '1.0.0';
 
-// API endpoints
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-
 // Theme colors
 export const COLORS = {
   primary: '#0070f3',

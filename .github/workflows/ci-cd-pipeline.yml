@@ -111,7 +111,8 @@ jobs:
         working-directory: ./front
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL || 'http://localhost:3001' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
+          NEXT_PUBLIC_APP_ENV: development
 
       - name: Build backend
         working-directory: ./backend
@@ -296,8 +297,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || '' }}
-            NEXT_PUBLIC_APP_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_APP_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
       - name: Output image tags
         run: |
@@ -338,16 +339,13 @@ jobs:
           echo "Triggering deployment..."
           echo "Note: Docker image should be configured in Render service settings"
           
-          # Create JSON payload file
-          echo '{"clearCache":false}' > /tmp/deploy_payload.json
-          
-          # Simple deploy request without image specification
-          # The image should be configured in Render service settings
+          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
+          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            --data-binary @/tmp/deploy_payload.json \
+            -d '{"clearCache":false}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys)
           
           echo "HTTP Response Code: $HTTP_CODE"
@@ -395,16 +393,13 @@ jobs:
           echo "Triggering deployment..."
           echo "Note: Docker image should be configured in Render service settings"
           
-          # Create JSON payload file
-          echo '{"clearCache":false}' > /tmp/deploy_payload_frontend.json
-          
-          # Simple deploy request without image specification
-          # The image should be configured in Render service settings
+          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
+          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_frontend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            --data-binary @/tmp/deploy_payload_frontend.json \
+            -d '{"clearCache":false}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys)
           
           echo "HTTP Response Code: $HTTP_CODE"
@@ -510,16 +505,13 @@ jobs:
           echo "Triggering deployment..."
           echo "Note: Docker image should be configured in Render service settings"
           
-          # Create JSON payload file
-          echo '{"clearCache":false}' > /tmp/deploy_payload_prod_backend.json
-          
-          # Simple deploy request without image specification
-          # The image should be configured in Render service settings
+          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
+          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_backend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            --data-binary @/tmp/deploy_payload_prod_backend.json \
+            -d '{"clearCache":false}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys)
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
@@ -565,16 +557,13 @@ jobs:
           echo "Triggering deployment..."
           echo "Note: Docker image should be configured in Render service settings"
           
-          # Create JSON payload file
-          echo '{"clearCache":false}' > /tmp/deploy_payload_prod_frontend.json
-          
-          # Simple deploy request without image specification
-          # The image should be configured in Render service settings
+          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
+          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_frontend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            --data-binary @/tmp/deploy_payload_prod_frontend.json \
+            -d '{"clearCache":false}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys)
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
