@@ -28,8 +28,8 @@ on:
 env:
   NODE_VERSION: '20.x'
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ github.repository }}/backend
-  FRONTEND_IMAGE: ${{ github.repository }}/frontend
+  BACKEND_IMAGE: ${{ toLower(github.repository) }}/backend
+  FRONTEND_IMAGE: ${{ toLower(github.repository) }}/frontend
 
 jobs:
   vendors:
@@ -360,7 +360,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache":do_not_clear}' \
+            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$BACKEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys)
           
           echo "HTTP Response Code: $HTTP_CODE"
@@ -414,7 +414,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache": "do_not_clear"}' \
+            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$FRONTEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys)
           
           echo "HTTP Response Code: $HTTP_CODE"
@@ -526,7 +526,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache":false}' \
+            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$BACKEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys)
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
@@ -578,7 +578,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache": "do_not_clear"}' \
+            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$FRONTEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys)
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
