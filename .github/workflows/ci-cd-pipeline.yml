@@ -105,15 +105,35 @@ jobs:
 
       - name: Restore frontend node_modules from cache
         uses: actions/cache/restore@v4
+        id: cache-frontend
         with:
           path: front/node_modules
           key: node-modules-frontend-${{ runner.os }}-${{ hashFiles('front/package-lock.json') }}
 
       - name: Restore backend node_modules from cache
         uses: actions/cache/restore@v4
+        id: cache-backend
         with:
           path: backend/node_modules
           key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+
+      - name: Install frontend dependencies if cache missed
+        if: steps.cache-frontend.outputs.cache-hit != 'true'
+        working-directory: ./front
+        run: npm install
+
+      - name: Install backend dependencies if cache missed
+        if: steps.cache-backend.outputs.cache-hit != 'true'
+        working-directory: ./backend
+        run: npm install
+
+      - name: Verify frontend dependencies
+        working-directory: ./front
+        run: |
+          if [ ! -d "node_modules/@babel/runtime" ]; then
+            echo "⚠️ @babel/runtime missing, reinstalling..."
+            npm install
+          fi
 
       - name: Build frontend
         working-directory: ./front
