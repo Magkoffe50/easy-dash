@@ -9,6 +9,12 @@ RUN npm install
 FROM base AS build
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
+# NEXT_PUBLIC_* variables must be available at build time
+# They will be passed as build args from GitHub Actions or Render
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_ENV
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
 RUN npm run build
 
 FROM base AS production

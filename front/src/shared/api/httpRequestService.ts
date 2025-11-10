@@ -1,8 +1,33 @@
 import { HttpRequestConfig, HttpResult } from './types';
 
 const getApiBaseUrl = (): string => {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+  // Get API URL from environment variable (set at build time)
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  // If in browser, also check window.__ENV__ (for runtime configuration)
+  if (typeof window !== 'undefined') {
+    const windowEnv = (window as { __ENV__?: { NEXT_PUBLIC_API_URL?: string } })
+      .__ENV__;
+    if (windowEnv?.NEXT_PUBLIC_API_URL) {
+      apiUrl = windowEnv.NEXT_PUBLIC_API_URL;
+    }
+  }
+
+  // Debug logging (only in development or if explicitly enabled)
+  if (
+    typeof window !== 'undefined' &&
+    (process.env.NODE_ENV === 'development' ||
+      process.env.NEXT_PUBLIC_DEBUG_API_URL)
+  ) {
+    console.log('[API] Environment variables:', {
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      windowEnv:
+        typeof window !== 'undefined'
+          ? (window as { __ENV__?: { NEXT_PUBLIC_API_URL?: string } }).__ENV__
+          : undefined,
+      resolved: apiUrl,
+    });
+  }
 
   if (apiUrl) {
     return apiUrl;

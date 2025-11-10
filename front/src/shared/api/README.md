@@ -22,7 +22,7 @@ The service automatically detects the environment and uses the appropriate base 
 Create a `.env.development` file in the `front/` directory:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_APP_ENV=development
 NEXT_PUBLIC_APP_NAME=EasyDash Dev
 ```
@@ -32,7 +32,7 @@ NEXT_PUBLIC_APP_NAME=EasyDash Dev
 Create a `.env.production` file in the `front/` directory:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://easydash.io
+NEXT_PUBLIC_API_URL=https://easydash.io
 NEXT_PUBLIC_APP_ENV=production
 NEXT_PUBLIC_APP_NAME=EasyDash
 ```
