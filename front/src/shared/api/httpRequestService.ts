@@ -1,5 +1,7 @@
 import { HttpRequestConfig, HttpResult } from './types';
 
+import '../../../envConfig';
+
 const getApiBaseUrl = (): string =>
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
