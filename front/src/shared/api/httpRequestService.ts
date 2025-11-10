@@ -1,9 +1,5 @@
-// HTTP Request Service with async/await support
-// Supports both development and production environments
-
 import { HttpRequestConfig, HttpResult } from './types';
 
-// Environment configuration
 const getApiBaseUrl = (): string => {
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -19,7 +15,6 @@ const getApiBaseUrl = (): string => {
   return 'http://localhost:3001';
 };
 
-// Default configuration
 const DEFAULT_CONFIG: HttpRequestConfig = {
   method: 'GET',
   headers: {
@@ -29,13 +24,11 @@ const DEFAULT_CONFIG: HttpRequestConfig = {
   credentials: 'include',
 };
 
-// Helper function to get auth token
 const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth-token');
 };
 
-// Helper function to add auth headers
 const addAuthHeaders = (
   headers: Record<string, string>,
 ): Record<string, string> => {
