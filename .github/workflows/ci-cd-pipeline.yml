@@ -318,43 +318,56 @@ jobs:
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            echo "🚀 Deploying backend to Render..."
-            echo "Image: $BACKEND_IMAGE"
-            
-            DEPLOY_RESPONSE=$(curl -s -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"clearCache\": false,
-                \"image\": {
-                  \"type\": \"docker\",
-                  \"ref\": \"$BACKEND_IMAGE\",
-                  \"registryCredential\": {
-                    \"type\": \"ghcr\",
-                    \"username\": \"${{ github.actor }}\",
-                    \"password\": \"$GITHUB_TOKEN\"
-                  }
+          if [ -z "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ]; then
+            echo "❌ RENDER_BACKEND_SERVICE_ID is not set"
+            exit 1
+          fi
+          
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ RENDER_API_KEY is not set"
+            exit 1
+          fi
+          
+          echo "🚀 Deploying backend to Render..."
+          echo "Service ID: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}"
+          echo "Image: $BACKEND_IMAGE"
+          
+          HTTP_CODE=$(curl -s -o /tmp/deploy_response.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"clearCache\": false,
+              \"image\": {
+                \"type\": \"docker\",
+                \"ref\": \"$BACKEND_IMAGE\",
+                \"registryCredential\": {
+                  \"type\": \"ghcr\",
+                  \"username\": \"${{ github.actor }}\",
+                  \"password\": \"$GITHUB_TOKEN\"
                 }
-              }" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys || echo "")
+              }
+            }" \
+            https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            DEPLOY_RESPONSE=$(cat /tmp/deploy_response.json)
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
             
-            if [ -n "$DEPLOY_RESPONSE" ]; then
-              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
-              if [ -n "$DEPLOY_ID" ]; then
-                echo "✅ Backend deployment initiated: $DEPLOY_ID"
-                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Failed to get deploy ID from response"
-                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
-              fi
+            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
+              echo "✅ Backend deployment initiated: $DEPLOY_ID"
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
             else
-              echo "❌ Failed to create backend deployment"
+              echo "⚠️ Response received but no deploy ID found"
+              echo "Response: $DEPLOY_RESPONSE"
+              exit 1
             fi
           else
-            echo "⚠️ RENDER_BACKEND_SERVICE_ID or RENDER_API_KEY not set, skipping backend deployment"
+            echo "❌ Failed to create backend deployment. HTTP Code: $HTTP_CODE"
+            if [ -f /tmp/deploy_response.json ]; then
+              echo "Response: $(cat /tmp/deploy_response.json)"
+            fi
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Deploy frontend to Render
         env:
@@ -362,43 +375,56 @@ jobs:
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            echo "🚀 Deploying frontend to Render..."
-            echo "Image: $FRONTEND_IMAGE"
-            
-            DEPLOY_RESPONSE=$(curl -s -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"clearCache\": false,
-                \"image\": {
-                  \"type\": \"docker\",
-                  \"ref\": \"$FRONTEND_IMAGE\",
-                  \"registryCredential\": {
-                    \"type\": \"ghcr\",
-                    \"username\": \"${{ github.actor }}\",
-                    \"password\": \"$GITHUB_TOKEN\"
-                  }
+          if [ -z "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ]; then
+            echo "❌ RENDER_FRONTEND_SERVICE_ID is not set"
+            exit 1
+          fi
+          
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ RENDER_API_KEY is not set"
+            exit 1
+          fi
+          
+          echo "🚀 Deploying frontend to Render..."
+          echo "Service ID: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}"
+          echo "Image: $FRONTEND_IMAGE"
+          
+          HTTP_CODE=$(curl -s -o /tmp/deploy_response_frontend.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"clearCache\": false,
+              \"image\": {
+                \"type\": \"docker\",
+                \"ref\": \"$FRONTEND_IMAGE\",
+                \"registryCredential\": {
+                  \"type\": \"ghcr\",
+                  \"username\": \"${{ github.actor }}\",
+                  \"password\": \"$GITHUB_TOKEN\"
                 }
-              }" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys || echo "")
+              }
+            }" \
+            https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_frontend.json)
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
             
-            if [ -n "$DEPLOY_RESPONSE" ]; then
-              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
-              if [ -n "$DEPLOY_ID" ]; then
-                echo "✅ Frontend deployment initiated: $DEPLOY_ID"
-                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Failed to get deploy ID from response"
-                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
-              fi
+            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
+              echo "✅ Frontend deployment initiated: $DEPLOY_ID"
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
             else
-              echo "❌ Failed to create frontend deployment"
+              echo "⚠️ Response received but no deploy ID found"
+              echo "Response: $DEPLOY_RESPONSE"
+              exit 1
             fi
           else
-            echo "⚠️ RENDER_FRONTEND_SERVICE_ID or RENDER_API_KEY not set, skipping frontend deployment"
+            echo "❌ Failed to create frontend deployment. HTTP Code: $HTTP_CODE"
+            if [ -f /tmp/deploy_response_frontend.json ]; then
+              echo "Response: $(cat /tmp/deploy_response_frontend.json)"
+            fi
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Get Render service URLs
         id: render-urls
@@ -464,43 +490,56 @@ jobs:
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            echo "🚀 Deploying backend to Render PRODUCTION..."
-            echo "Image: $BACKEND_IMAGE"
-            
-            DEPLOY_RESPONSE=$(curl -s -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"clearCache\": false,
-                \"image\": {
-                  \"type\": \"docker\",
-                  \"ref\": \"$BACKEND_IMAGE\",
-                  \"registryCredential\": {
-                    \"type\": \"ghcr\",
-                    \"username\": \"${{ github.actor }}\",
-                    \"password\": \"$GITHUB_TOKEN\"
-                  }
+          if [ -z "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
+            echo "❌ RENDER_BACKEND_PRODUCTION_SERVICE_ID is not set"
+            exit 1
+          fi
+          
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ RENDER_API_KEY is not set"
+            exit 1
+          fi
+          
+          echo "🚀 Deploying backend to Render PRODUCTION..."
+          echo "Service ID: ${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}"
+          echo "Image: $BACKEND_IMAGE"
+          
+          HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_backend.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"clearCache\": false,
+              \"image\": {
+                \"type\": \"docker\",
+                \"ref\": \"$BACKEND_IMAGE\",
+                \"registryCredential\": {
+                  \"type\": \"ghcr\",
+                  \"username\": \"${{ github.actor }}\",
+                  \"password\": \"$GITHUB_TOKEN\"
                 }
-              }" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys || echo "")
+              }
+            }" \
+            https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_backend.json)
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
             
-            if [ -n "$DEPLOY_RESPONSE" ]; then
-              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
-              if [ -n "$DEPLOY_ID" ]; then
-                echo "✅ Backend production deployment initiated: $DEPLOY_ID"
-                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Failed to get deploy ID from response"
-                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
-              fi
+            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
+              echo "✅ Backend production deployment initiated: $DEPLOY_ID"
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
             else
-              echo "❌ Failed to create backend production deployment"
+              echo "⚠️ Response received but no deploy ID found"
+              echo "Response: $DEPLOY_RESPONSE"
+              exit 1
             fi
           else
-            echo "⚠️ RENDER_BACKEND_PRODUCTION_SERVICE_ID or RENDER_API_KEY not set, skipping backend deployment"
+            echo "❌ Failed to create backend production deployment. HTTP Code: $HTTP_CODE"
+            if [ -f /tmp/deploy_response_prod_backend.json ]; then
+              echo "Response: $(cat /tmp/deploy_response_prod_backend.json)"
+            fi
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Deploy frontend to Render (Production)
         env:
@@ -508,43 +547,56 @@ jobs:
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            echo "🚀 Deploying frontend to Render PRODUCTION..."
-            echo "Image: $FRONTEND_IMAGE"
-            
-            DEPLOY_RESPONSE=$(curl -s -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"clearCache\": false,
-                \"image\": {
-                  \"type\": \"docker\",
-                  \"ref\": \"$FRONTEND_IMAGE\",
-                  \"registryCredential\": {
-                    \"type\": \"ghcr\",
-                    \"username\": \"${{ github.actor }}\",
-                    \"password\": \"$GITHUB_TOKEN\"
-                  }
+          if [ -z "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
+            echo "❌ RENDER_FRONTEND_PRODUCTION_SERVICE_ID is not set"
+            exit 1
+          fi
+          
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ RENDER_API_KEY is not set"
+            exit 1
+          fi
+          
+          echo "🚀 Deploying frontend to Render PRODUCTION..."
+          echo "Service ID: ${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}"
+          echo "Image: $FRONTEND_IMAGE"
+          
+          HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_frontend.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"clearCache\": false,
+              \"image\": {
+                \"type\": \"docker\",
+                \"ref\": \"$FRONTEND_IMAGE\",
+                \"registryCredential\": {
+                  \"type\": \"ghcr\",
+                  \"username\": \"${{ github.actor }}\",
+                  \"password\": \"$GITHUB_TOKEN\"
                 }
-              }" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys || echo "")
+              }
+            }" \
+            https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_frontend.json)
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
             
-            if [ -n "$DEPLOY_RESPONSE" ]; then
-              DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' || echo "")
-              if [ -n "$DEPLOY_ID" ]; then
-                echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
-                echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              else
-                echo "⚠️ Failed to get deploy ID from response"
-                echo "$DEPLOY_RESPONSE" | jq '.' || echo "$DEPLOY_RESPONSE"
-              fi
+            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
+              echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
+              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
             else
-              echo "❌ Failed to create frontend production deployment"
+              echo "⚠️ Response received but no deploy ID found"
+              echo "Response: $DEPLOY_RESPONSE"
+              exit 1
             fi
           else
-            echo "⚠️ RENDER_FRONTEND_PRODUCTION_SERVICE_ID or RENDER_API_KEY not set, skipping frontend deployment"
+            echo "❌ Failed to create frontend production deployment. HTTP Code: $HTTP_CODE"
+            if [ -f /tmp/deploy_response_prod_frontend.json ]; then
+              echo "Response: $(cat /tmp/deploy_response_prod_frontend.json)"
+            fi
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Get Render service URLs
         id: render-urls
