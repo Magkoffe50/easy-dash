@@ -109,6 +109,8 @@ jobs:
         with:
           path: front/node_modules
           key: node-modules-frontend-${{ runner.os }}-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: |
+            node-modules-frontend-${{ runner.os }}-
 
       - name: Restore backend node_modules from cache
         uses: actions/cache/restore@v4
@@ -116,23 +118,33 @@ jobs:
         with:
           path: backend/node_modules
           key: node-modules-backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            node-modules-backend-${{ runner.os }}-
 
-      - name: Install frontend dependencies if cache missed
-        if: steps.cache-frontend.outputs.cache-hit != 'true'
-        working-directory: ./front
-        run: npm install
-
-      - name: Install backend dependencies if cache missed
-        if: steps.cache-backend.outputs.cache-hit != 'true'
-        working-directory: ./backend
-        run: npm install
-
-      - name: Verify frontend dependencies
+      - name: Ensure frontend dependencies
         working-directory: ./front
         run: |
-          if [ ! -d "node_modules/@babel/runtime" ]; then
-            echo "⚠️ @babel/runtime missing, reinstalling..."
+          if [ ! -d "node_modules" ] || [ ! -d "node_modules/@babel/runtime" ]; then
+            echo "📥 Installing frontend dependencies..."
             npm install
+          else
+            echo "✅ Frontend dependencies found in cache"
+          fi
+
+      - name: Ensure backend dependencies
+        working-directory: ./backend
+        run: |
+          echo "Checking backend dependencies..."
+          ls -la node_modules 2>/dev/null | head -10 || echo "node_modules not found"
+          
+          if [ ! -d "node_modules" ] || [ ! -d "node_modules/lodash" ]; then
+            echo "📥 Installing backend dependencies..."
+            npm install
+            
+            echo "Verifying lodash installation..."
+            ls -la node_modules/lodash 2>/dev/null || echo "lodash still missing!"
+          else
+            echo "✅ Backend dependencies found in cache"
           fi
 
       - name: Build frontend
