@@ -15,7 +15,7 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_ENV
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
-RUN npm run build
+RUN if [ -d ".next/standalone" ] && [ -d ".next/static" ]; then echo "Using prebuilt Next.js output"; else npm run build; fi
 
 FROM base AS production
 ENV NODE_ENV=production

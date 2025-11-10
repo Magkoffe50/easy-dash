@@ -10,7 +10,7 @@ FROM base AS build
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+RUN if [ -d "dist" ]; then echo "Using prebuilt backend dist"; else npm run build; fi
 
 FROM base AS production
 ENV NODE_ENV=production
