@@ -209,6 +209,9 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_APP_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
       - name: Output image tags
         run: |
@@ -411,7 +414,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache":do_not_clear}' \
+            -d '{"clearCache": "do_not_clear"}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys)
           
           echo "HTTP Response Code: $HTTP_CODE"
@@ -575,7 +578,7 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"clearCache":false}' \
+            -d '{"clearCache": "do_not_clear"}' \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys)
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
