@@ -2,12 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverRuntimeConfig: {
-    API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
-  publicRuntimeConfig: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
 };
 
 export default nextConfig;
