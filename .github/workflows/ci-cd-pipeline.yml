@@ -377,7 +377,7 @@ jobs:
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             DEPLOY_RESPONSE=$(cat /tmp/deploy_response.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Backend deployment initiated: $DEPLOY_ID"
@@ -431,7 +431,7 @@ jobs:
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             DEPLOY_RESPONSE=$(cat /tmp/deploy_response_frontend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Frontend deployment initiated: $DEPLOY_ID"
@@ -547,7 +547,7 @@ jobs:
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_backend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Backend production deployment initiated: $DEPLOY_ID"
@@ -599,7 +599,7 @@ jobs:
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_frontend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.deploy.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
