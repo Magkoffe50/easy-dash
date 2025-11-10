@@ -5,19 +5,18 @@ import { HttpRequestConfig, HttpResult } from './types';
 
 // Environment configuration
 const getApiBaseUrl = (): string => {
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  if (apiUrl) {
+    return apiUrl;
+  }
+
   if (typeof window === 'undefined') {
-    // Server-side rendering
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    return 'http://localhost:3001';
   }
 
-  // Client-side
-  const env = process.env.NEXT_PUBLIC_APP_ENV || 'development';
-
-  if (env === 'production') {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://easydash.io';
-  }
-
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+  return 'http://localhost:3001';
 };
 
 // Default configuration
