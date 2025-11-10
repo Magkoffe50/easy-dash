@@ -4,7 +4,9 @@ import React, { useCallback, useState } from 'react';
 import { LoginCredentials, LoginForm } from '@/features/auth';
 import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
 import { APP_CONFIG } from '@/shared/config';
-import { Box, Typography, Link as MuiLink } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Link from '@mui/material/Link';
 
 export const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -112,13 +114,13 @@ export const HomePage: React.FC = () => {
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               By signing in, you agree to our{' '}
-              <MuiLink href="/terms" underline="hover">
+              <Link href="/terms" underline="hover">
                 Terms of Service
-              </MuiLink>{' '}
+              </Link>{' '}
               and{' '}
-              <MuiLink href="/privacy" underline="hover">
+              <Link href="/privacy" underline="hover">
                 Privacy Policy
-              </MuiLink>
+              </Link>
             </Typography>
           </Box>
         </Box>

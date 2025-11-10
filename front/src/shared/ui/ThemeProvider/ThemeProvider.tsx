@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
 import { lightTheme, darkTheme } from '@/shared/config/theme';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { TextField, TextFieldProps } from '@mui/material';
+import TextField from '@mui/material/TextField';
+import type { TextFieldProps } from '@mui/material/TextField';
 
 interface InputProps extends Omit<TextFieldProps, 'size'> {
   size?: 'sm' | 'md' | 'lg';
