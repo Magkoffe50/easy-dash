@@ -126,6 +126,7 @@ jobs:
             front/.next
             backend/dist
           retention-days: 7
+          if-no-files-found: error
 
   lint:
     name: Lint Code
@@ -249,23 +250,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
-          path: artifact
-
-      - name: Restore build outputs
-        run: |
-          if [ ! -d "artifact/front/.next" ]; then
-            echo "Frontend build artifacts not found"
-            exit 1
-          fi
-          if [ ! -d "artifact/backend/dist" ]; then
-            echo "Backend build artifacts not found"
-            exit 1
-          fi
-          rm -rf front/.next
-          rm -rf backend/dist
-          cp -R artifact/front/.next front/
-          cp -R artifact/backend/dist backend/
-          rm -rf artifact
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
