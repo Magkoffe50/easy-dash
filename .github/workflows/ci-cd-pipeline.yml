@@ -124,7 +124,9 @@ jobs:
           name: build-artifacts
           path: |
             front/.next
+            front/node_modules
             backend/dist
+            backend/node_modules
           retention-days: 7
           if-no-files-found: error
 
@@ -250,6 +252,40 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+
+      - name: Verify and prepare build artifacts
+        run: |
+          echo "Verifying artifacts..."
+          ls -la front/ || true
+          ls -la backend/ || true
+          
+          if [ -d "front/.next/standalone" ] && [ -d "front/.next/static" ]; then
+            echo "✅ Frontend build artifacts found"
+          else
+            echo "❌ Frontend build artifacts missing"
+            exit 1
+          fi
+          
+          if [ -d "front/node_modules" ]; then
+            echo "✅ Frontend node_modules found"
+          else
+            echo "❌ Frontend node_modules missing"
+            exit 1
+          fi
+          
+          if [ -d "backend/dist" ]; then
+            echo "✅ Backend build artifacts found"
+          else
+            echo "❌ Backend build artifacts missing"
+            exit 1
+          fi
+          
+          if [ -d "backend/node_modules" ]; then
+            echo "✅ Backend node_modules found"
+          else
+            echo "❌ Backend node_modules missing"
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
