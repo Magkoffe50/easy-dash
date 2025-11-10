@@ -28,8 +28,6 @@ on:
 env:
   NODE_VERSION: '20.x'
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ toLower(github.repository) }}/backend
-  FRONTEND_IMAGE: ${{ toLower(github.repository) }}/frontend
 
 jobs:
   vendors:
@@ -97,6 +95,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        run: |
+          echo "BACKEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -334,6 +337,11 @@ jobs:
       url: ${{ steps.deploy-info.outputs.url }}
 
     steps:
+      - name: Set lowercase image names
+        run: |
+          echo "BACKEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend" >> $GITHUB_ENV
+
       - name: Deploy backend to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
@@ -497,6 +505,11 @@ jobs:
       url: ${{ steps.deploy-info.outputs.url }}
 
     steps:
+      - name: Set lowercase image names
+        run: |
+          echo "BACKEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend" >> $GITHUB_ENV
+
       - name: Deploy backend to Render (Production)
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
