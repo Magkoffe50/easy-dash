@@ -154,9 +154,6 @@ jobs:
       - name: Build frontend
         working-directory: ./front
         run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3001' }}
-          NEXT_PUBLIC_APP_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
       - name: Build backend
         working-directory: ./backend
@@ -213,9 +210,6 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_APP_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
       - name: Output image tags
         run: |
