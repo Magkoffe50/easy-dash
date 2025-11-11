@@ -7,7 +7,6 @@ COPY package*.json ./
 RUN npm install --only=production
 
 FROM base AS production
-ENV NODE_ENV=production
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY dist ./dist
