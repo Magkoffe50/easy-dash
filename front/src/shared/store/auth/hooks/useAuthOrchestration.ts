@@ -18,9 +18,9 @@ export const useAuthOrchestration = () => {
   const onCheckAuth = useCallback(async () => {
     auth.setLoading(true);
 
-    const [data, error] = await api.get('/auth/me');
+    const [data, error, response] = await api.get('/auth/me');
 
-    if (error || !data) {
+    if (error || !data || response?.status !== 200) {
       auth.logout();
       routerStore.setInitialized(true);
       auth.setLoading(false);

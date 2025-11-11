@@ -102,11 +102,15 @@ export class HttpRequestService {
     });
 
     if (fetchError) {
-      return [null, { status: 'error', message: fetchError }];
+      return [null, { status: 'error', message: fetchError }, response];
     }
 
     if (!response) {
-      return [null, { status: 'error', message: 'No response received' }];
+      return [
+        null,
+        { status: 'error', message: 'No response received' },
+        response,
+      ];
     }
 
     try {
@@ -122,7 +126,7 @@ export class HttpRequestService {
       }
 
       if (response.ok) {
-        return [data, null];
+        return [data, null, response];
       } else {
         return [
           null,
@@ -130,6 +134,7 @@ export class HttpRequestService {
             status: `HTTP ${response.status}: ${response.statusText}`,
             message: (data as { message?: string })?.message || 'Unknown error',
           },
+          response,
         ];
       }
     } catch (parseError) {
@@ -141,6 +146,7 @@ export class HttpRequestService {
             parseError instanceof Error ? parseError.message : 'Unknown error'
           }`,
         },
+        response,
       ];
     }
   }

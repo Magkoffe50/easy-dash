@@ -41,6 +41,7 @@ export interface HttpResponse<T = unknown> {
 export type HttpResult<T> = [
   T | null,
   { status: string; message: string } | null,
+  Response | null,
 ];
 
 export interface DashboardStats {
