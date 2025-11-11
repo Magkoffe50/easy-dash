@@ -339,6 +339,7 @@ jobs:
           echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Deploy backend to Render
+        id: deploy-backend
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
@@ -376,6 +377,42 @@ jobs:
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Backend deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              
+              echo ""
+              echo "⏳ Waiting for deployment to complete..."
+              MAX_WAIT=600
+              ELAPSED=0
+              INTERVAL=15
+              
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+                
+                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+                  "https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys/$DEPLOY_ID")
+                
+                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
+                
+                case "$DEPLOY_STATUS" in
+                  "live")
+                    echo "✅ Backend deployment successful!"
+                    exit 0
+                    ;;
+                  "build_failed"|"update_failed"|"canceled"|"deactivated")
+                    echo "❌ Backend deployment failed with status: $DEPLOY_STATUS"
+                    exit 1
+                    ;;
+                  "created"|"build_in_progress"|"update_in_progress")
+                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
+                    ;;
+                  *)
+                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
+                    ;;
+                esac
+              done
+              
+              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              exit 1
             else
               echo "⚠️ Response received but no deploy ID found"
               echo "Response: $DEPLOY_RESPONSE"
@@ -390,6 +427,7 @@ jobs:
           fi
 
       - name: Deploy frontend to Render
+        id: deploy-frontend
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
@@ -410,10 +448,7 @@ jobs:
           echo "Image: $FRONTEND_IMAGE"
           
           echo "Triggering deployment..."
-          echo "Note: Docker image should be configured in Render service settings"
           
-          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
-          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_frontend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
@@ -430,6 +465,42 @@ jobs:
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Frontend deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              
+              echo ""
+              echo "⏳ Waiting for deployment to complete..."
+              MAX_WAIT=600
+              ELAPSED=0
+              INTERVAL=15
+              
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+                
+                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+                  "https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys/$DEPLOY_ID")
+                
+                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
+                
+                case "$DEPLOY_STATUS" in
+                  "live")
+                    echo "✅ Frontend deployment successful!"
+                    exit 0
+                    ;;
+                  "build_failed"|"update_failed"|"canceled"|"deactivated")
+                    echo "❌ Frontend deployment failed with status: $DEPLOY_STATUS"
+                    exit 1
+                    ;;
+                  "created"|"build_in_progress"|"update_in_progress")
+                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
+                    ;;
+                  *)
+                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
+                    ;;
+                esac
+              done
+              
+              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              exit 1
             else
               echo "⚠️ Response received but no deploy ID found"
               echo "Response: $DEPLOY_RESPONSE"
@@ -508,6 +579,7 @@ jobs:
           echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Deploy backend to Render (Production)
+        id: deploy-backend-prod
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
@@ -528,10 +600,7 @@ jobs:
           echo "Image: $BACKEND_IMAGE"
           
           echo "Triggering deployment..."
-          echo "Note: Docker image should be configured in Render service settings"
           
-          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
-          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_backend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
@@ -546,6 +615,42 @@ jobs:
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Backend production deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              
+              echo ""
+              echo "⏳ Waiting for deployment to complete..."
+              MAX_WAIT=600
+              ELAPSED=0
+              INTERVAL=15
+              
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+                
+                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+                  "https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys/$DEPLOY_ID")
+                
+                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
+                
+                case "$DEPLOY_STATUS" in
+                  "live")
+                    echo "✅ Backend production deployment successful!"
+                    exit 0
+                    ;;
+                  "build_failed"|"update_failed"|"canceled"|"deactivated")
+                    echo "❌ Backend production deployment failed with status: $DEPLOY_STATUS"
+                    exit 1
+                    ;;
+                  "created"|"build_in_progress"|"update_in_progress")
+                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
+                    ;;
+                  *)
+                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
+                    ;;
+                esac
+              done
+              
+              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              exit 1
             else
               echo "⚠️ Response received but no deploy ID found"
               echo "Response: $DEPLOY_RESPONSE"
@@ -560,6 +665,7 @@ jobs:
           fi
 
       - name: Deploy frontend to Render (Production)
+        id: deploy-frontend-prod
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
@@ -580,10 +686,7 @@ jobs:
           echo "Image: $FRONTEND_IMAGE"
           
           echo "Triggering deployment..."
-          echo "Note: Docker image should be configured in Render service settings"
           
-          # According to Render API docs: https://api-docs.render.com/reference/create-deploy
-          # Simple deploy request - body is optional
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_frontend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
@@ -598,6 +701,42 @@ jobs:
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
               echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+              
+              echo ""
+              echo "⏳ Waiting for deployment to complete..."
+              MAX_WAIT=600
+              ELAPSED=0
+              INTERVAL=15
+              
+              while [ $ELAPSED -lt $MAX_WAIT ]; do
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED + INTERVAL))
+                
+                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+                  "https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys/$DEPLOY_ID")
+                
+                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
+                
+                case "$DEPLOY_STATUS" in
+                  "live")
+                    echo "✅ Frontend production deployment successful!"
+                    exit 0
+                    ;;
+                  "build_failed"|"update_failed"|"canceled"|"deactivated")
+                    echo "❌ Frontend production deployment failed with status: $DEPLOY_STATUS"
+                    exit 1
+                    ;;
+                  "created"|"build_in_progress"|"update_in_progress")
+                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
+                    ;;
+                  *)
+                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
+                    ;;
+                esac
+              done
+              
+              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              exit 1
             else
               echo "⚠️ Response received but no deploy ID found"
               echo "Response: $DEPLOY_RESPONSE"

@@ -18,7 +18,7 @@ export const getDatabaseConfig = (
       password: url.password,
       database: url.pathname.slice(1), // Remove leading '/'
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: configService.get('NODE_ENV') === 'development',
+      synchronize: configService.get('NODE_ENV') !== 'production',
       logging: configService.get('NODE_ENV') === 'development',
       ssl:
         configService.get('NODE_ENV') === 'production'
@@ -36,7 +36,7 @@ export const getDatabaseConfig = (
     password: configService.get('DB_PASSWORD'),
     database: configService.get('DB_DATABASE'),
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: configService.get('NODE_ENV') === 'development',
+    synchronize: configService.get('NODE_ENV') !== 'production',
     logging: configService.get('NODE_ENV') === 'development',
     ssl:
       configService.get('NODE_ENV') === 'production'
