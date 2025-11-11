@@ -51,19 +51,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(
+  login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ) {
-    const user = (await this.authService.validateUser(
-      loginDto.email,
-      loginDto.password,
-    )) as UserWithoutPassword | null;
-
-    if (!user) {
-      return { message: 'Invalid credentials' };
-    }
-
+    const user = req.user as UserWithoutPassword;
     const result = this.authService.login(user);
 
     res.cookie('access_token', result.access_token, {
@@ -91,7 +84,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'Current user info' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getProfile(@Req() req: Request) {
+  getProfile(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     return req.user;
   }
 }
