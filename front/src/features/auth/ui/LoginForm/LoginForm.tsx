@@ -8,7 +8,6 @@ import {
   CardContent,
   Typography,
   Box,
-  Alert,
   Link as MuiLink,
 } from '@mui/material';
 import { LoginCredentials } from '../../model/types';
@@ -17,13 +16,11 @@ import Link from 'next/link';
 interface LoginFormProps {
   onSubmit: (credentials: LoginCredentials) => void;
   isLoading?: boolean;
-  error?: string;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   isLoading = false,
-  error,
 }) => {
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
@@ -81,12 +78,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               size="lg"
             />
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
 
           <Button
             type="submit"

@@ -32,7 +32,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     : getPublicRoutes();
 
   return (
-    <Box sx={{ width: 240, p: 2 }}>
+    <Box sx={{ width: { xs: '100vw', md: 240 }, p: 2 }}>
       <List>
         {navigationItems.map((route) => (
           <ListItem key={route.path} disablePadding>

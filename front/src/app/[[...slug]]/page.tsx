@@ -2,13 +2,14 @@ import { notFound } from 'next/navigation';
 import { getRouteMetadata, ROUTES } from '@/shared/config/routes';
 import type { Metadata } from 'next';
 
-// Import all page components directly for SSR
-import { HomePage } from '@/pages-layer/HomePage';
-import { LoginPage } from '@/pages-layer/LoginPage';
-import { RegisterPage } from '@/pages-layer/RegisterPage';
-import { DashboardPage } from '@/pages-layer/DashboardPage';
-import { ProfilePage } from '@/pages-layer/ProfilePage';
-import { SettingsPage } from '@/pages-layer/SettingsPage';
+import {
+  HomePage,
+  LoginPage,
+  RegisterPage,
+  DashboardPage,
+  ProfilePage,
+  SettingsPage,
+} from '@/pages-layer';
 
 interface DynamicPageProps {
   params: Promise<{
@@ -16,7 +17,6 @@ interface DynamicPageProps {
   }>;
 }
 
-// Map routes to components using centralized configuration
 const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   [ROUTES.HOME.path]: HomePage,
   [ROUTES.LOGIN.path]: LoginPage,
@@ -27,7 +27,6 @@ const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 export function generateStaticParams() {
-  // Use centralized routes for static params generation
   return Object.values(ROUTES).map((route) => {
     const slug = route.path === '/' ? [] : route.path.slice(1).split('/');
     return { slug };

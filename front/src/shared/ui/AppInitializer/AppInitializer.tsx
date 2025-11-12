@@ -1,20 +1,21 @@
 'use client';
 
+import { FC, PropsWithChildren, useEffect, useRef } from 'react';
 import {
   useAuthSelectors,
   useAuthOrchestration,
 } from '@/shared/store/auth/hooks';
 import { useNotifications } from '@/shared/store/notifications/hooks';
-import { Box, CircularProgress } from '@mui/material';
 import { useAppRouteGuard } from '@/shared/lib/useAppRouteGuard';
-import { PropsWithChildren, useEffect, useRef } from 'react';
+import { Loader } from '@/shared/ui';
 import { ToastNotificationStack } from '../ToastNotification';
 
-export const AppInitializer: React.FC<PropsWithChildren> = ({ children }) => {
+export const AppInitializer: FC<PropsWithChildren> = ({ children }) => {
+  const hasCheckedAuth = useRef(false);
+
   const { isLoading, isAppReady } = useAuthSelectors();
   const { onCheckAuth } = useAuthOrchestration();
   const { notifications, removeNotification } = useNotifications();
-  const hasCheckedAuth = useRef(false);
   useAppRouteGuard();
 
   useEffect(() => {
@@ -32,18 +33,7 @@ export const AppInitializer: React.FC<PropsWithChildren> = ({ children }) => {
           onClose={removeNotification}
         />
       )}
-      {(!isAppReady || isLoading) && (
-        <Box
-          sx={{ background: 'rgba(0,0,0,0.2)' }}
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          width="100%"
-          height="100vh"
-        >
-          <CircularProgress size={80} />
-        </Box>
-      )}
+      {(!isAppReady || isLoading) && <Loader />}
       {isAppReady && !isLoading && children}
     </>
   );

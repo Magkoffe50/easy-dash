@@ -10,7 +10,7 @@ const DEFAULT_CONFIG: HttpRequestConfig = {
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds
+  timeout: 10000,
   credentials: 'include',
 };
 
@@ -32,7 +32,6 @@ const addAuthHeaders = (
   return headers;
 };
 
-// Safe fetch wrapper with timeout
 const safeFetch = async (
   url: string,
   config: RequestInit & { timeout?: number } = {},
@@ -61,7 +60,6 @@ const safeFetch = async (
   }
 };
 
-// Main HTTP request service
 export class HttpRequestService {
   private baseUrl: string;
 
@@ -69,7 +67,6 @@ export class HttpRequestService {
     this.baseUrl = getApiBaseUrl();
   }
 
-  // Generic request method
   private async request<T>(
     endpoint: string,
     config: HttpRequestConfig = {},
@@ -84,14 +81,12 @@ export class HttpRequestService {
       },
     };
 
-    // Prepare fetch config
     const fetchConfig: RequestInit = {
       method: finalConfig.method,
       headers: finalConfig.headers,
       credentials: finalConfig.credentials,
     };
 
-    // Add body for non-GET requests
     if (finalConfig.body && finalConfig.method !== 'GET') {
       fetchConfig.body = JSON.stringify(finalConfig.body);
     }
@@ -151,7 +146,6 @@ export class HttpRequestService {
     }
   }
 
-  // GET request
   async get<T>(
     endpoint: string,
     config?: Omit<HttpRequestConfig, 'method' | 'body'>,
@@ -159,7 +153,6 @@ export class HttpRequestService {
     return this.request<T>(endpoint, { ...config, method: 'GET' });
   }
 
-  // POST request
   async post<T>(
     endpoint: string,
     body?: unknown,
@@ -168,7 +161,6 @@ export class HttpRequestService {
     return this.request<T>(endpoint, { ...config, method: 'POST', body });
   }
 
-  // PUT request
   async put<T>(
     endpoint: string,
     body?: unknown,
@@ -177,7 +169,6 @@ export class HttpRequestService {
     return this.request<T>(endpoint, { ...config, method: 'PUT', body });
   }
 
-  // PATCH request
   async patch<T>(
     endpoint: string,
     body?: unknown,
@@ -186,7 +177,6 @@ export class HttpRequestService {
     return this.request<T>(endpoint, { ...config, method: 'PATCH', body });
   }
 
-  // DELETE request
   async delete<T>(
     endpoint: string,
     config?: Omit<HttpRequestConfig, 'method' | 'body'>,
@@ -194,7 +184,6 @@ export class HttpRequestService {
     return this.request<T>(endpoint, { ...config, method: 'DELETE' });
   }
 
-  // Upload file
   async upload<T>(
     endpoint: string,
     file: File,
@@ -216,26 +205,21 @@ export class HttpRequestService {
       body: formData,
       headers: {
         ...config?.headers,
-        // Don't set Content-Type for FormData, let browser set it with boundary
       },
     });
   }
 
-  // Set base URL (useful for testing or dynamic configuration)
   setBaseUrl(url: string): void {
     this.baseUrl = url;
   }
 
-  // Get current base URL
   getBaseUrl(): string {
     return this.baseUrl;
   }
 }
 
-// Create singleton instance
 export const httpRequestService = new HttpRequestService();
 
-// Convenience functions for common use cases
 export const api = {
   get: <T>(
     endpoint: string,

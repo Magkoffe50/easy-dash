@@ -45,25 +45,6 @@ export const ROUTES: Record<string, RouteConfig> = {
   },
 } as const;
 
-// API routes
-// export const API_ROUTES = {
-//   AUTH: {
-//     LOGIN: '/api/auth/login',
-//     LOGOUT: '/api/auth/logout',
-//     REGISTER: '/api/auth/register',
-//     REFRESH: '/api/auth/refresh',
-//   },
-//   USERS: {
-//     PROFILE: '/api/users/profile',
-//     SETTINGS: '/api/users/settings',
-//   },
-//   DASHBOARD: {
-//     STATS: '/api/dashboard/stats',
-//     CHARTS: '/api/dashboard/charts',
-//   },
-// } as const;
-
-// Helper functions
 export const getRouteByPath = (path: string): RouteConfig | undefined => {
   return Object.values(ROUTES).find((route) => route.path === path);
 };

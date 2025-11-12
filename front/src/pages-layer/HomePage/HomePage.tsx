@@ -1,26 +1,19 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
-import { LoginCredentials, LoginForm } from '@/features/auth';
-import { useAuthSelectors, useAuthOrchestration } from '@/shared/store/auth/hooks';
+import React from 'react';
+import { LoginForm } from '@/features/auth';
+import {
+  useAuthSelectors,
+  useAuthOrchestration,
+} from '@/shared/store/auth/hooks';
 import { APP_CONFIG } from '@/shared/config';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 
 export const HomePage: React.FC = () => {
-  const [error, setError] = useState<string | null>(null);
   const { isLoginLoading } = useAuthSelectors();
   const { onLoginRequest } = useAuthOrchestration();
-
-  const handleLogin = useCallback(
-    (credentials: LoginCredentials) => {
-      setError(null);
-
-      onLoginRequest(credentials);
-    },
-    [onLoginRequest],
-  );
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex' }}>
@@ -52,22 +45,14 @@ export const HomePage: React.FC = () => {
 
           <Typography
             variant="h4"
-            sx={{
-              mb: 4,
-              opacity: 0.9,
-              fontWeight: 300,
-            }}
+            sx={{ mb: 4, opacity: 0.9, fontWeight: 300 }}
           >
             Your Dashboard, Simplified
           </Typography>
 
           <Typography
             variant="h6"
-            sx={{
-              opacity: 0.8,
-              fontWeight: 300,
-              lineHeight: 1.6,
-            }}
+            sx={{ opacity: 0.8, fontWeight: 300, lineHeight: 1.6 }}
           >
             Create beautiful dashboards with ease. Monitor your data, track your
             progress, and make informed decisions with our intuitive dashboard
@@ -76,7 +61,6 @@ export const HomePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Right side - Login form */}
       <Box
         sx={{
           flex: 1,
@@ -89,7 +73,6 @@ export const HomePage: React.FC = () => {
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-          {/* Mobile title for small screens */}
           <Box
             sx={{
               display: { xs: 'block', lg: 'none' },
@@ -105,11 +88,7 @@ export const HomePage: React.FC = () => {
             </Typography>
           </Box>
 
-          <LoginForm
-            isLoading={isLoginLoading}
-            onSubmit={handleLogin}
-            error={error || undefined}
-          />
+          <LoginForm isLoading={isLoginLoading} onSubmit={onLoginRequest} />
 
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

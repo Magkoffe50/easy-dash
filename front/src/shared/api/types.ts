@@ -1,5 +1,3 @@
-// Shared API types
-
 export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
@@ -29,7 +27,6 @@ export interface HttpRequestConfig {
   credentials?: RequestCredentials;
 }
 
-// Legacy interface for backward compatibility
 export interface HttpResponse<T = unknown> {
   data: T | null;
   error: string | null;
@@ -37,7 +34,6 @@ export interface HttpResponse<T = unknown> {
   ok: boolean;
 }
 
-// New tuple type for the desired API
 export type HttpResult<T> = [
   T | null,
   { status: string; message: string } | null,
