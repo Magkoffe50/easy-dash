@@ -76,12 +76,15 @@ export const useAuthOrchestration = () => {
         userData.firstName &&
         userData.lastName
       ) {
-        const [, error] = await api.post('/auth/register', userData);
+        const [data, error] = await api.post<{
+          user: User;
+        }>('/auth/register', userData);
 
         if (error) {
           notifications.showError(error.message);
         } else {
           notifications.showSuccess('User registered successfully');
+          user.setUser(data!.user);
           auth.login();
           router.push('/dashboard');
         }
@@ -89,7 +92,7 @@ export const useAuthOrchestration = () => {
         auth.setLoginLoading(false);
       }
     },
-    [auth, notifications, router],
+    [auth, notifications, router, user],
   );
 
   const onLogoutRequest = useCallback(async () => {
