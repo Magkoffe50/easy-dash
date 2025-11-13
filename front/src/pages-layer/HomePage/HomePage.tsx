@@ -16,7 +16,9 @@ export const HomePage: React.FC = () => {
   const { onLoginRequest } = useAuthOrchestration();
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex' }}>
+    <Box
+      sx={{ height: '100%', minHeight: 'calc(100dvh - 64px)', display: 'flex' }}
+    >
       <Box
         sx={{
           flex: 1,

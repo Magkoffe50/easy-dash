@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleClose = useCallback(() => setAnchorEl(null), []);
 
   return (
-    <AppBar position="static">
+    <AppBar position="sticky" sx={{ height: 64 }}>
       <Toolbar>
         {user && (
           <IconButton
