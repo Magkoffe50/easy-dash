@@ -1,0 +1,1 @@
+export { RecentDashboardCard } from './RecentDashboardCard';

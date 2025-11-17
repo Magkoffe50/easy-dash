@@ -33,7 +33,7 @@ export const AppInitializer: FC<PropsWithChildren> = ({ children }) => {
           onClose={removeNotification}
         />
       )}
-      {(!isAppReady || isLoading) && <Loader />}
+      {(!isAppReady || isLoading) && <Loader fullScreen />}
       {isAppReady && !isLoading && children}
     </>
   );

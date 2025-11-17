@@ -5,3 +5,5 @@ export * from './RegisterPage';
 export * from './DashboardPage';
 export * from './ProfilePage';
 export * from './SettingsPage';
+export * from './NotesPage';
+export * from './CreateNotePage';

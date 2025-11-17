@@ -9,6 +9,8 @@ import {
   DashboardPage,
   ProfilePage,
   SettingsPage,
+  NotesPage,
+  CreateNotePage,
 } from '@/pages-layer';
 
 interface DynamicPageProps {
@@ -24,6 +26,8 @@ const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   [ROUTES.DASHBOARD.path]: DashboardPage,
   [ROUTES.PROFILE.path]: ProfilePage,
   [ROUTES.SETTINGS.path]: SettingsPage,
+  [ROUTES.NOTES.path]: NotesPage,
+  [ROUTES.CREATE_NOTE.path]: CreateNotePage,
 };
 
 export function generateStaticParams() {

@@ -1,5 +1,12 @@
 import React from 'react';
-import { Dashboard, Home, Settings, Person, Login } from '@mui/icons-material';
+import {
+  Dashboard,
+  Home,
+  Settings,
+  Person,
+  Login,
+  Note,
+} from '@mui/icons-material';
 
 export const getNavigationIcon = (path: string): React.ReactElement => {
   switch (path) {
@@ -13,6 +20,8 @@ export const getNavigationIcon = (path: string): React.ReactElement => {
       return <Settings />;
     case '/login':
       return <Login />;
+    case '/notes':
+      return <Note />;
     default:
       return <Home />;
   }

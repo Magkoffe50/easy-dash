@@ -9,6 +9,8 @@ export const ROUTE_COMPONENTS_MAP: Record<string, string> = {
   [ROUTES.DASHBOARD.path]: 'DashboardPage',
   [ROUTES.PROFILE.path]: 'ProfilePage',
   [ROUTES.SETTINGS.path]: 'SettingsPage',
+  [ROUTES.NOTES.path]: 'NotesPage',
+  [ROUTES.CREATE_NOTE.path]: 'CreateNotePage',
 };
 
 // Server-safe route configuration

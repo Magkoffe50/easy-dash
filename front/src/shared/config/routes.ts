@@ -43,6 +43,18 @@ export const ROUTES: Record<string, RouteConfig> = {
     description: 'Application settings',
     requiresAuth: true,
   },
+  NOTES: {
+    path: '/notes',
+    title: 'Notes',
+    description: 'All your notes',
+    requiresAuth: true,
+  },
+  CREATE_NOTE: {
+    path: '/notes/create',
+    title: 'Create Note',
+    description: 'Create a new note',
+    requiresAuth: true,
+  },
 } as const;
 
 export const getRouteByPath = (path: string): RouteConfig | undefined => {
