@@ -7,6 +7,7 @@ import { api } from '@/shared/api';
 import { User } from '@/entities';
 import useNotifications from '../../notifications/hooks/useNotifications';
 import { RegisterData } from '@/features';
+import { useNotes } from '../../notes/hooks';
 
 export const useAuthOrchestration = () => {
   const auth = useAuthStore();
@@ -14,6 +15,7 @@ export const useAuthOrchestration = () => {
   const routerStore = useRouterStore();
   const router = useRouter();
   const notifications = useNotifications();
+  const notes = useNotes();
 
   const onCheckAuth = useCallback(async () => {
     auth.setLoading(true);
@@ -38,8 +40,9 @@ export const useAuthOrchestration = () => {
     }
 
     routerStore.setInitialized(true);
+    await notes.refetch();
     auth.setLoading(false);
-  }, [auth, router, routerStore, user]);
+  }, [auth, notes, router, routerStore, user]);
 
   const onLoginRequest = useCallback(
     async (credentials: { email: string; password: string }) => {
@@ -56,6 +59,7 @@ export const useAuthOrchestration = () => {
         } else if (data && 'user' in data) {
           user.setUser(data.user);
           auth.login();
+          await notes.refetch();
           router.push('/dashboard');
         }
       }
@@ -63,7 +67,7 @@ export const useAuthOrchestration = () => {
       routerStore.setInitialized(true);
       auth.setLoginLoading(false);
     },
-    [auth, notifications, router, routerStore, user],
+    [auth, notes, notifications, router, routerStore, user],
   );
 
   const onRegisterRequest = useCallback(
@@ -86,13 +90,14 @@ export const useAuthOrchestration = () => {
           notifications.showSuccess('User registered successfully');
           user.setUser(data!.user);
           auth.login();
+          await notes.refetch();
           router.push('/dashboard');
         }
 
         auth.setLoginLoading(false);
       }
     },
-    [auth, notifications, router, user],
+    [auth, notes, notifications, router, user],
   );
 
   const onLogoutRequest = useCallback(async () => {

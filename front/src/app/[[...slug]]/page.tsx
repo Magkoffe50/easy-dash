@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getRouteMetadata, ROUTES } from '@/shared/config/routes';
+import { matchDynamicRoute } from '@/shared/config/dynamicRoutes';
 import type { Metadata } from 'next';
 
 import {
@@ -11,6 +12,7 @@ import {
   SettingsPage,
   NotesPage,
   CreateNotePage,
+  NoteDetailPage,
 } from '@/pages-layer';
 
 interface DynamicPageProps {
@@ -63,9 +65,22 @@ export default async function DynamicPage({ params }: DynamicPageProps) {
   const path = slug.length > 0 ? `/${slug.join('/')}` : '/';
   const Component = ROUTE_COMPONENTS[path];
 
-  if (!Component) {
-    notFound();
+  if (Component) {
+    return <Component />;
   }
 
-  return <Component />;
+  // TODO: fix this cringe for dynamic routes in one place
+  const dynamicMatch = matchDynamicRoute(path, slug);
+  if (dynamicMatch) {
+    const componentName = dynamicMatch.config.componentName;
+    const DYNAMIC_COMPONENTS: Record<string, React.ComponentType> = {
+      NoteDetailPage,
+    };
+    const DynamicComponent = DYNAMIC_COMPONENTS[componentName];
+    if (DynamicComponent) {
+      return <DynamicComponent />;
+    }
+  }
+
+  notFound();
 }

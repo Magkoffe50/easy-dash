@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useNotesStore } from '../notesStore';
 import { useUserStore } from '../../user/userStore';
 import { api } from '@/shared/api';
-import { Note, NoteCreatePayload } from '@/entities/note';
+import { Note, NoteCreatePayload, NoteUpdatePayload } from '@/entities/note';
 import { useNotificationsStore } from '../../notifications/notificationsStore';
 
 export const useNotes = () => {
@@ -11,13 +11,9 @@ export const useNotes = () => {
   const notifications = useNotificationsStore();
 
   const fetchNotes = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
-
     notesStore.setLoading(true);
 
-    const [data, error] = await api.get<Note[]>(`/users/${userId}/notes`);
+    const [data, error] = await api.get<Note[]>(`/notes`);
 
     if (error) {
       notifications.addNotification({
@@ -33,7 +29,7 @@ export const useNotes = () => {
     }
 
     notesStore.setLoading(false);
-  }, [userId, notesStore, notifications]);
+  }, [notesStore, notifications]);
 
   const createNote = useCallback(
     async (payload: NoteCreatePayload): Promise<Note | null> => {
@@ -55,10 +51,7 @@ export const useNotes = () => {
 
       notesStore.setLoading(true);
 
-      const [data, error] = await api.post<Note>(
-        `/users/${userId}/notes`,
-        payload,
-      );
+      const [data, error] = await api.post<Note>(`/notes`, payload);
 
       notesStore.setLoading(false);
 
@@ -84,16 +77,109 @@ export const useNotes = () => {
     [userId, notesStore, notifications],
   );
 
-  // useEffect(() => {
-  //   if (userId) {
-  //     fetchNotes();
-  //   }
-  // }, [userId, fetchNotes]);
+  const updateNote = useCallback(
+    async (
+      noteId: string,
+      payload: NoteUpdatePayload,
+    ): Promise<Note | null> => {
+      if (!userId) {
+        notifications.addNotification({
+          message: 'User not found',
+          severity: 'error',
+        });
+        return null;
+      }
+
+      notesStore.setLoading(true);
+
+      const [data, error] = await api.patch<Note>(`/notes/${noteId}`, payload);
+
+      notesStore.setLoading(false);
+
+      if (error) {
+        notifications.addNotification({
+          message: `Failed to update note: ${error.message}`,
+          severity: 'error',
+        });
+        return null;
+      }
+
+      if (data) {
+        notesStore.updateNote(noteId, data);
+        notifications.addNotification({
+          message: 'Note updated successfully',
+          severity: 'success',
+        });
+        return data;
+      }
+
+      return null;
+    },
+    [userId, notesStore, notifications],
+  );
+
+  const deleteNote = useCallback(
+    async (noteId: string): Promise<boolean> => {
+      if (!userId) {
+        notifications.addNotification({
+          message: 'User not found',
+          severity: 'error',
+        });
+        return false;
+      }
+
+      notesStore.setLoading(true);
+
+      const [, error] = await api.delete(`/notes/${noteId}`);
+
+      notesStore.setLoading(false);
+
+      if (error) {
+        notifications.addNotification({
+          message: `Failed to delete note: ${error.message}`,
+          severity: 'error',
+        });
+        return false;
+      }
+
+      notesStore.removeNote(noteId);
+      notifications.addNotification({
+        message: 'Note deleted successfully',
+        severity: 'success',
+      });
+      return true;
+    },
+    [userId, notesStore, notifications],
+  );
+
+  const getNoteById = useCallback(
+    async (noteId: string): Promise<Note | null> => {
+      notesStore.setLoading(true);
+
+      const [data, error] = await api.get<Note>(`/notes/${noteId}`);
+
+      notesStore.setLoading(false);
+
+      if (error) {
+        notifications.addNotification({
+          message: `Failed to fetch note: ${error.message}`,
+          severity: 'error',
+        });
+        return null;
+      }
+
+      return data;
+    },
+    [notesStore, notifications],
+  );
 
   return {
     notes: notesStore.notes,
     isLoading: notesStore.isLoading,
     refetch: fetchNotes,
     createNote,
+    updateNote,
+    deleteNote,
+    getNoteById,
   };
 };

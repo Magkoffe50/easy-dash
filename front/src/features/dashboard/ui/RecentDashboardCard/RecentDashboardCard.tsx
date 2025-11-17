@@ -36,7 +36,7 @@ export const RecentDashboardCard: React.FC<RecentDashboardCardProps> = ({
           boxShadow: 4,
         },
       }}
-      onClick={() => router.push(`/dashboard/${note.id}`)}
+      onClick={() => router.push(`/notes/${note.id}`)}
     >
       <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
