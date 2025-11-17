@@ -47,6 +47,7 @@ export const NoteDetailPage: React.FC = () => {
 
   useEffect(() => {
     loadNote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpdate = async (data: NoteCreatePayload | NoteUpdatePayload) => {

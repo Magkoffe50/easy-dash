@@ -39,7 +39,7 @@ export const CreateNotePage: React.FC = () => {
       </Box>
 
       <NoteEditor
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit as never}
         onCancel={() => router.back()}
         isLoading={isLoading}
         submitLabel="Create Note"
