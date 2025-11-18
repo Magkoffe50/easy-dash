@@ -17,3 +17,4 @@ export { useAccount } from './user/hooks';
 export { useNotifications } from './notifications/hooks';
 
 export { useNotes } from './notes/hooks';
+export type { SortOption, NotesQueryParams } from './notes/types';

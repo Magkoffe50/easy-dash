@@ -2,23 +2,20 @@
 
 import React, { FC } from 'react';
 import { RegisterForm } from '@/features/auth/ui/RegisterForm';
-import { Container, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 export const RegisterPage: FC = () => (
-  <Container
-    maxWidth="sm"
+  <Box
     sx={{
       height: '100%',
+      minHeight: '100vh',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      py: 4,
+      p: 4,
+      bgcolor: 'background.default',
     }}
   >
-    <Typography variant="h3" component="h1" align="center" gutterBottom>
-      Register
-    </Typography>
     <RegisterForm />
-  </Container>
+  </Box>
 );

@@ -12,5 +12,23 @@ export const formatLastUpdated = (dateString: string): string => {
   if (diffHours < 24) {
     return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
   }
-  return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+  if (diffDays === 1) {
+    return 'Yesterday';
+  }
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+  if (diffDays < 14) {
+    return 'Last week';
+  }
+  return `${diffDays} days ago`;
+};
+
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 };

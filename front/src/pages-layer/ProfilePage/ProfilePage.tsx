@@ -40,7 +40,7 @@ export const ProfilePage: React.FC = () => {
         alignItems: 'center',
       }}
     >
-      <Card sx={{ width: '100%', mx: 'auto', mt: 4, height: 'fit-content' }}>
+      <Card sx={{ mx: 'auto', mt: 4, height: 'fit-content' }}>
         <CardContent sx={{ p: 4 }}>
           <Box component="form" onSubmit={handleSubmit}>
             <Typography variant="h4" sx={{ mb: 3 }}>

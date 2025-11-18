@@ -30,10 +30,8 @@ export const RecentDashboardCard: React.FC<RecentDashboardCardProps> = ({
       sx={{
         height: '100%',
         cursor: 'pointer',
-        transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4,
+          boxShadow: 2,
         },
       }}
       onClick={() => router.push(`/notes/${note.id}`)}

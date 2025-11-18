@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Box } from '@mui/material';
-import { Header } from '@/widgets/Header';
 import { Sidebar } from '@/widgets/Sidebar';
 import {
   useAuthSelectors,
@@ -14,54 +13,37 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen] = useState(true);
   const { isAuthenticated, user } = useAuthSelectors();
   const { onLogoutRequest } = useAuthOrchestration();
-
-  const handleSidebarToggle = useCallback(() => {
-    setIsSidebarOpen(!isSidebarOpen);
-  }, [isSidebarOpen]);
 
   return (
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
         height: '100dvh',
+        overflow: 'hidden',
       }}
     >
-      <Header
-        onMenuToggle={isAuthenticated ? handleSidebarToggle : undefined}
-        user={user || undefined}
-        onLogout={onLogoutRequest}
-      />
+      {isAuthenticated && (
+        <Sidebar
+          isOpen={isSidebarOpen}
+          isAuthenticated={isAuthenticated}
+          user={user || undefined}
+          onLogout={onLogoutRequest}
+        />
+      )}
 
       <Box
+        component="main"
         sx={{
-          display: 'flex',
-          height: 'calc(100dvh - 64px)',
-          overflow: 'hidden',
+          flex: 1,
+          width: isAuthenticated ? 'auto' : '100%',
+          overflow: 'auto',
+          minHeight: 0,
         }}
       >
-        {isAuthenticated && (
-          <Sidebar
-            isOpen={isSidebarOpen}
-            isAuthenticated={isAuthenticated}
-            onLogout={onLogoutRequest}
-          />
-        )}
-
-        <Box
-          component="main"
-          sx={{
-            flex: 1,
-            width: isAuthenticated ? 'auto' : '100%',
-            overflow: 'auto',
-            minHeight: 0,
-          }}
-        >
-          {children}
-        </Box>
+        {children}
       </Box>
     </Box>
   );

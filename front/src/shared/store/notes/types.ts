@@ -15,3 +15,15 @@ export interface NotesActions {
 }
 
 export type NotesStore = NotesState & NotesActions;
+
+export type SortOption =
+  | 'dateModified'
+  | 'dateCreated'
+  | 'titleAsc'
+  | 'titleDesc';
+
+export type NotesQueryParams = {
+  search?: string;
+  sort?: SortOption;
+  tag?: string;
+};

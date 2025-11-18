@@ -1,11 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { useNotesStore } from '../notesStore';
 import { useUserStore } from '../../user/userStore';
 import { api } from '@/shared/api';
 import { Note, NoteCreatePayload, NoteUpdatePayload } from '@/entities/note';
 import { useNotificationsStore } from '../../notifications/notificationsStore';
+import { buildNotesQueryString } from '../utils/notesQueryHelpers';
+import type { SortOption, NotesQueryParams } from '../types';
 
-export const useNotes = () => {
+export type { SortOption, NotesQueryParams };
+
+export const useNotes = (queryParams?: NotesQueryParams) => {
   const notesStore = useNotesStore();
   const userId = useUserStore((state) => state.user?.id);
   const notifications = useNotificationsStore();
@@ -13,7 +17,8 @@ export const useNotes = () => {
   const fetchNotes = useCallback(async () => {
     notesStore.setLoading(true);
 
-    const [data, error] = await api.get<Note[]>(`/notes`);
+    const queryString = buildNotesQueryString(queryParams);
+    const [data, error] = await api.get<Note[]>(`/notes${queryString}`);
 
     if (error) {
       notifications.addNotification({
@@ -29,7 +34,21 @@ export const useNotes = () => {
     }
 
     notesStore.setLoading(false);
-  }, [notesStore, notifications]);
+  }, [notesStore, notifications, queryParams]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchNotes();
+    }
+  }, [userId]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    notesStore.notes.forEach((note) => {
+      note.tags?.forEach((tag) => tags.add(tag));
+    });
+    return Array.from(tags);
+  }, [notesStore.notes]);
 
   const createNote = useCallback(
     async (payload: NoteCreatePayload): Promise<Note | null> => {
@@ -176,6 +195,7 @@ export const useNotes = () => {
   return {
     notes: notesStore.notes,
     isLoading: notesStore.isLoading,
+    allTags,
     refetch: fetchNotes,
     createNote,
     updateNote,

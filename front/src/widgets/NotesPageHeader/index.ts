@@ -1,0 +1,2 @@
+export { NotesPageHeader } from './NotesPageHeader';
+

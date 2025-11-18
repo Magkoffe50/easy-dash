@@ -16,10 +16,12 @@ export const LoginPage: React.FC = () => {
     <Box
       sx={{
         height: '100%',
+        minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2,
+        p: 4,
+        bgcolor: 'background.default',
       }}
     >
       <LoginForm onSubmit={onLoginRequest} isLoading={isLoginLoading} />

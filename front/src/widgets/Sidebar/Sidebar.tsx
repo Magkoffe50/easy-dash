@@ -3,16 +3,19 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { Navigation } from '@/widgets/Navigation';
+import { User } from '@/entities/user/model/types';
 
 interface SidebarProps {
   isOpen: boolean;
   isAuthenticated: boolean;
+  user?: User;
   onLogout: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   isAuthenticated,
+  user,
   onLogout,
 }) => (
   <Box
@@ -20,8 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     sx={(theme) => ({
       transition: 'width 0.3s ease',
       overflow: 'hidden',
-      // borderRight: { xs: 0, md: 1 },
-      // borderColor: 'divider',
+      borderRight: '1px solid',
+      borderColor: 'divider',
       minWidth: 0,
       position: { xs: 'fixed', md: 'relative' },
       top: { xs: `${theme.mixins.toolbar.minHeight}px`, md: 'auto' },
@@ -35,9 +38,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         md: isOpen ? 240 : 0,
       },
       zIndex: { xs: 1300, md: 'auto' },
-      backgroundColor: { xs: 'background.paper', md: 'transparent' },
+      backgroundColor:
+        theme.palette.mode === 'dark'
+          ? theme.palette.grey[900]
+          : theme.palette.grey[50],
     })}
   >
-    <Navigation isAuthenticated={isAuthenticated} onLogout={onLogout} />
+    <Navigation
+      isAuthenticated={isAuthenticated}
+      user={user}
+      onLogout={onLogout}
+    />
   </Box>
 );
