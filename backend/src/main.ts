@@ -25,6 +25,8 @@ async function bootstrap() {
   //   prefix: '/uploads',
   // });
 
+  app.setGlobalPrefix('api');
+
   app.enableCors(getCorsConfig());
 
   app.use(cookieParser());
@@ -47,7 +49,8 @@ async function bootstrap() {
     .addTag('auth')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // Swagger at root path, which with global prefix 'api' becomes /api
+  SwaggerModule.setup('', app, document);
 
   const port = process.env.PORT || 3001;
 
