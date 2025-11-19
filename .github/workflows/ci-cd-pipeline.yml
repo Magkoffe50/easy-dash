@@ -612,12 +612,39 @@ jobs:
           
           echo "🔍 Validating SSH key format..."
           
-          KEY_TYPE=$(head -n 1 ~/.ssh/deploy_key | cut -d' ' -f1)
+          FIRST_LINE=$(head -n 1 ~/.ssh/deploy_key)
+          KEY_TYPE=$(echo "$FIRST_LINE" | cut -d' ' -f1)
           KEY_LENGTH=$(wc -l < ~/.ssh/deploy_key)
+          
+          if [ "$KEY_TYPE" = "ssh-rsa" ] || [ "$KEY_TYPE" = "ssh-ed25519" ] || [ "$KEY_TYPE" = "ssh-dss" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp256" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp384" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp521" ]; then
+            echo "❌ ERROR: You've provided a PUBLIC KEY instead of a PRIVATE KEY"
+            echo ""
+            echo "The key you pasted starts with: $KEY_TYPE"
+            echo "This is a PUBLIC key format (from a .pub file)"
+            echo ""
+            echo "🔧 How to fix:"
+            echo "1. You need the PRIVATE key file (NOT the .pub file)"
+            echo "2. Private keys start with: -----BEGIN OPENSSH PRIVATE KEY-----"
+            echo "   or: -----BEGIN RSA PRIVATE KEY-----"
+            echo "3. If you don't have the private key, generate a new key pair:"
+            echo "   ssh-keygen -t ed25519 -C 'github-deploy' -f ~/.ssh/github_deploy"
+            echo "4. Copy the contents of ~/.ssh/github_deploy (NOT github_deploy.pub)"
+            echo "5. Add the PUBLIC key to your server:"
+            echo "   ssh-copy-id -i ~/.ssh/github_deploy.pub user@your-server"
+            echo ""
+            exit 1
+          fi
           
           if [ "$KEY_TYPE" != "-----BEGIN" ]; then
             echo "❌ Invalid SSH key: Key does not start with '-----BEGIN'"
-            echo "First line: $(head -n 1 ~/.ssh/deploy_key | cut -c1-50)..."
+            echo "First line: $(echo "$FIRST_LINE" | cut -c1-50)..."
+            echo ""
+            echo "⚠️  Expected format:"
+            echo "   -----BEGIN OPENSSH PRIVATE KEY-----"
+            echo "   or"
+            echo "   -----BEGIN RSA PRIVATE KEY-----"
+            echo ""
+            echo "Make sure you're using the PRIVATE key file, not the public key (.pub file)"
             exit 1
           fi
           
