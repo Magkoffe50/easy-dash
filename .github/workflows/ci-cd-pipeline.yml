@@ -745,7 +745,7 @@ jobs:
           SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
         run: |
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
@@ -753,7 +753,7 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             set -e
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
             mkdir -p "$DEPLOY_PATH"
             cd "$DEPLOY_PATH"
             if [ ! -f .env ]; then
@@ -781,7 +781,7 @@ jobs:
           SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
         run: |
           scp -i "$SSH_KEY" \
             -P "$SSH_PORT" \
@@ -840,7 +840,7 @@ jobs:
           SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
@@ -850,7 +850,7 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             set -e
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
             FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
             
@@ -892,7 +892,7 @@ jobs:
           SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
           BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
           FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
@@ -901,7 +901,7 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
             FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
             

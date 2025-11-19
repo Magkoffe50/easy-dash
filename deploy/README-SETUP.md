@@ -14,7 +14,7 @@ Add these secrets:
 | `PRODUCTION_SSH_KEY` | Private SSH key (full key) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 | `PRODUCTION_SERVER_USER` | SSH username (optional) | `root` |
 | `PRODUCTION_SSH_PORT` | SSH port (optional) | `22` |
-| `PRODUCTION_DEPLOY_PATH` | Deployment path (optional) | `/opt/easy-dash` |
+| `PRODUCTION_DEPLOY_PATH` | Deployment path (optional) | `/var/www/html` |
 
 **How to generate SSH key pair:**
 ```bash
@@ -46,8 +46,8 @@ ufw allow 443/tcp
 ufw --force enable
 
 # Create deployment directory
-mkdir -p /opt/easy-dash
-chmod 755 /opt/easy-dash
+mkdir -p /var/www/html
+chmod 755 /var/www/html
 ```
 
 ### 3. SSH Key Setup
@@ -106,7 +106,7 @@ Wait for DNS propagation (can take up to 48 hours, usually much faster).
 After first deployment, SSH into server and configure:
 
 ```bash
-cd /opt/easy-dash
+cd /var/www/html
 nano .env
 ```
 
@@ -147,7 +147,7 @@ The pipeline will:
 ssh root@your-server-ip
 
 # Check containers
-cd /opt/easy-dash
+cd /var/www/html
 docker-compose -f docker-compose.prod.yml ps
 
 # Check logs
@@ -177,7 +177,7 @@ docker-compose -f docker-compose.prod.yml logs
 **If containers won't start:**
 ```bash
 # Check environment variables
-cd /opt/easy-dash
+cd /var/www/html
 cat .env
 
 # Check port conflicts
@@ -204,19 +204,19 @@ docker-compose -f docker-compose.prod.yml restart
 
 **View logs:**
 ```bash
-cd /opt/easy-dash
+cd /var/www/html
 docker-compose -f docker-compose.prod.yml logs -f
 ```
 
 **Restart services:**
 ```bash
-cd /opt/easy-dash
+cd /var/www/html
 docker-compose -f docker-compose.prod.yml restart
 ```
 
 **Backup database:**
 ```bash
-cd /opt/easy-dash
+cd /var/www/html
 docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres easy_dash_db > backup_$(date +%Y%m%d).sql
 ```
 
