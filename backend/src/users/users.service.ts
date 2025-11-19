@@ -12,12 +12,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { encryptPassword } from './utils/encryptPassword';
 import { decryptPassword } from './utils/decryptPassword';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private storageService: StorageService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
@@ -93,6 +95,36 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (user?.avatar) {
+      await this.storageService.deleteAvatar(user.avatar);
+    }
     await this.usersRepository.delete(id);
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.avatar) {
+      await this.storageService.deleteAvatar(user.avatar);
+    }
+
+    const avatarUrl = await this.storageService.uploadAvatar(file, userId);
+
+    await this.usersRepository.update(userId, { avatar: avatarUrl });
+
+    const updatedUser = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found after update');
+    }
+
+    return updatedUser;
   }
 }

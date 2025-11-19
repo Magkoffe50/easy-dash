@@ -9,13 +9,25 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Request } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+type UserWithoutPassword = Omit<User, 'password'>;
 
 @ApiTags('users')
 @Controller('users')
@@ -79,5 +91,24 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
+  }
+
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload user avatar' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 200,
+    description: 'Avatar uploaded successfully',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async uploadAvatar(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User> {
+    const user = req.user as UserWithoutPassword;
+    return this.usersService.uploadAvatar(user.id, file);
   }
 }

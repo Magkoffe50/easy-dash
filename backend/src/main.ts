@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { getCorsConfig } from './config/cors.config';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 const envFile =
   process.env.NODE_ENV === 'production'
@@ -13,13 +14,21 @@ const envFile =
     : '.env.development';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
+  const nodeEnv = process.env.NODE_ENV || 'development';
+
+  if (nodeEnv !== 'production') {
+    const uploadsPath = path.join(process.cwd(), 'uploads');
+    app.useStaticAssets(uploadsPath, {
+      prefix: '/uploads',
+    });
+  }
+
   app.enableCors(getCorsConfig());
 
-  // Cookie parser middleware
   app.use(cookieParser());
 
   // Global validation pipe

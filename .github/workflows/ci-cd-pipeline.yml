@@ -563,237 +563,218 @@ jobs:
           fi
 
   deploy-production:
-    name: Deploy to Production (Render)
+    name: Deploy to Production (DigitalOcean)
     runs-on: ubuntu-latest
     needs: [vendors, build]
     if: ${{ always() && needs.vendors.result == 'success' && needs.build.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
     environment:
       name: production
-      url: ${{ steps.deploy-info.outputs.url }}
+      url: https://easy-dash.dev
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set lowercase image names
         run: |
-          echo "BACKEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend" >> $GITHUB_ENV
+          echo "BACKEND_IMAGE=$(echo '${{ env.REGISTRY }}/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend:sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo '${{ env.REGISTRY }}/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend:sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
-      - name: Deploy backend to Render (Production)
-        id: deploy-backend-prod
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup SSH
         run: |
-          if [ -z "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ]; then
-            echo "❌ RENDER_BACKEND_PRODUCTION_SERVICE_ID is not set"
-            exit 1
-          fi
-          
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "❌ RENDER_API_KEY is not set"
-            exit 1
-          fi
-          
-          echo "🚀 Deploying backend to Render PRODUCTION..."
-          echo "Service ID: ${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}"
-          echo "Image: $BACKEND_IMAGE"
-          
-          echo "Triggering deployment..."
-          
-          HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_backend.json -w "%{http_code}" -X POST \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -H "Accept: application/json" \
-            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$BACKEND_IMAGE\"}" \
-            https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys)
-          
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_backend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
-            
-            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
-              echo "✅ Backend production deployment initiated: $DEPLOY_ID"
-              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              
-              echo ""
-              echo "⏳ Waiting for deployment to complete..."
-              MAX_WAIT=600
-              ELAPSED=0
-              INTERVAL=15
-              
-              while [ $ELAPSED -lt $MAX_WAIT ]; do
-                sleep $INTERVAL
-                ELAPSED=$((ELAPSED + INTERVAL))
-                
-                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-                  "https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}/deploys/$DEPLOY_ID")
-                
-                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
-                
-                case "$DEPLOY_STATUS" in
-                  "live")
-                    echo "✅ Backend production deployment successful!"
-                    exit 0
-                    ;;
-                  "build_failed"|"update_failed"|"canceled"|"deactivated")
-                    echo "❌ Backend production deployment failed with status: $DEPLOY_STATUS"
-                    exit 1
-                    ;;
-                  "created"|"build_in_progress"|"update_in_progress")
-                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
-                    ;;
-                  *)
-                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
-                    ;;
-                esac
-              done
-              
-              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
-              exit 1
-            else
-              echo "⚠️ Response received but no deploy ID found"
-              echo "Response: $DEPLOY_RESPONSE"
-              exit 1
-            fi
-          else
-            echo "❌ Failed to create backend production deployment. HTTP Code: $HTTP_CODE"
-            if [ -f /tmp/deploy_response_prod_backend.json ]; then
-              echo "Response: $(cat /tmp/deploy_response_prod_backend.json)"
-            fi
-            exit 1
-          fi
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.PRODUCTION_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy frontend to Render (Production)
-        id: deploy-frontend-prod
+      - name: Install Docker on server
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
         run: |
-          if [ -z "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ]; then
-            echo "❌ RENDER_FRONTEND_PRODUCTION_SERVICE_ID is not set"
-            exit 1
-          fi
-          
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "❌ RENDER_API_KEY is not set"
-            exit 1
-          fi
-          
-          echo "🚀 Deploying frontend to Render PRODUCTION..."
-          echo "Service ID: ${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}"
-          echo "Image: $FRONTEND_IMAGE"
-          
-          echo "Triggering deployment..."
-          
-          HTTP_CODE=$(curl -s -o /tmp/deploy_response_prod_frontend.json -w "%{http_code}" -X POST \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -H "Accept: application/json" \
-            -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$FRONTEND_IMAGE\"}" \
-            https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys)
-          
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_prod_frontend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
-            
-            if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
-              echo "✅ Frontend production deployment initiated: $DEPLOY_ID"
-              echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
-              
-              echo ""
-              echo "⏳ Waiting for deployment to complete..."
-              MAX_WAIT=600
-              ELAPSED=0
-              INTERVAL=15
-              
-              while [ $ELAPSED -lt $MAX_WAIT ]; do
-                sleep $INTERVAL
-                ELAPSED=$((ELAPSED + INTERVAL))
-                
-                STATUS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-                  "https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}/deploys/$DEPLOY_ID")
-                
-                DEPLOY_STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status // empty')
-                
-                case "$DEPLOY_STATUS" in
-                  "live")
-                    echo "✅ Frontend production deployment successful!"
-                    exit 0
-                    ;;
-                  "build_failed"|"update_failed"|"canceled"|"deactivated")
-                    echo "❌ Frontend production deployment failed with status: $DEPLOY_STATUS"
-                    exit 1
-                    ;;
-                  "created"|"build_in_progress"|"update_in_progress")
-                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
-                    ;;
-                  *)
-                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
-                    ;;
-                esac
-              done
-              
-              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
-              exit 1
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << 'EOF'
+            if ! command -v docker &> /dev/null; then
+              echo "📦 Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sh get-docker.sh
+              rm get-docker.sh
+              systemctl enable docker
+              systemctl start docker
             else
-              echo "⚠️ Response received but no deploy ID found"
-              echo "Response: $DEPLOY_RESPONSE"
-              exit 1
+              echo "✅ Docker already installed"
             fi
-          else
-            echo "❌ Failed to create frontend production deployment. HTTP Code: $HTTP_CODE"
-            if [ -f /tmp/deploy_response_prod_frontend.json ]; then
-              echo "Response: $(cat /tmp/deploy_response_prod_frontend.json)"
-            fi
-            exit 1
-          fi
 
-      - name: Get Render service URLs
-        id: render-urls
+            if ! command -v docker-compose &> /dev/null; then
+              echo "📦 Installing Docker Compose..."
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+            else
+              echo "✅ Docker Compose already installed"
+            fi
+
+            docker --version
+            docker-compose --version
+          EOF
+
+      - name: Setup deployment directory
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
         run: |
-          if [ -n "${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            FRONTEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_PRODUCTION_SERVICE_ID }} || echo "")
-            FRONTEND_URL=$(echo "$FRONTEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
-            echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }}" ] && [ -n "$RENDER_API_KEY" ]; then
-            BACKEND_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-              https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_PRODUCTION_SERVICE_ID }} || echo "")
-            BACKEND_URL=$(echo "$BACKEND_RESPONSE" | jq -r '.service.serviceDetails.url // .service.url // ""' || echo "")
-            echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
-          fi
-        continue-on-error: true
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST bash -s << 'REMOTE_SCRIPT'
+            set -e
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            mkdir -p "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            if [ ! -f .env ]; then
+              echo "⚠️  .env file not found. Creating template..."
+              printf '%s\n' \
+                'DB_DATABASE=easy_dash_db' \
+                'DB_USERNAME=postgres' \
+                'DB_PASSWORD=CHANGE_ME' \
+                'JWT_SECRET=CHANGE_ME' \
+                'JWT_EXPIRES_IN=24h' \
+                'FRONTEND_URL=https://easy-dash.dev' \
+                'NEXT_PUBLIC_API_URL=https://easy-dash.dev/api' \
+                'R2_ACCOUNT_ID=' \
+                'R2_ACCESS_KEY_ID=' \
+                'R2_SECRET_ACCESS_KEY=' \
+                'R2_BUCKET_NAME=' \
+                'R2_PUBLIC_URL=' > .env
+              echo "⚠️  Please update .env file with your production values!"
+            fi
+          REMOTE_SCRIPT
+
+      - name: Copy deployment files
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+        run: |
+          scp -i $SSH_KEY -P $SSH_PORT -o StrictHostKeyChecking=no \
+            deploy/docker-compose.prod.yml \
+            $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
+
+      - name: Configure Nginx
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+        run: |
+          scp -i $SSH_KEY -P $SSH_PORT -o StrictHostKeyChecking=no \
+            deploy/nginx.conf \
+            $SERVER_USER@$SERVER_HOST:/tmp/easy-dash-nginx.conf
+          
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << 'EOF'
+            if [ -f /etc/nginx/sites-available/easy-dash.dev ]; then
+              echo "✅ Nginx config already exists"
+            else
+              echo "📝 Setting up Nginx configuration..."
+              mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
+              ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/
+              nginx -t && systemctl reload nginx || echo "⚠️  Nginx test failed, please check manually"
+            fi
+          EOF
+
+      - name: Login to GitHub Container Registry
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+        run: |
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          EOF
+
+      - name: Deploy application
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+        run: |
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST bash -s << 'REMOTE_SCRIPT'
+            set -e
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
+            FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
+            
+            cd "$DEPLOY_PATH"
+            
+            if [ -f .env ]; then
+              echo "📄 Loading environment variables from .env file..."
+              set -a
+              source .env
+              set +a
+            else
+              echo "⚠️  .env file not found, using defaults"
+            fi
+            
+            echo "📥 Pulling Docker images..."
+            docker pull "$BACKEND_IMAGE" || exit 1
+            docker pull "$FRONTEND_IMAGE" || exit 1
+            
+            echo "🔄 Setting image environment variables..."
+            export BACKEND_IMAGE="$BACKEND_IMAGE"
+            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
+            
+            echo "🛑 Stopping existing containers..."
+            docker-compose -f docker-compose.prod.yml down || true
+            
+            echo "🚀 Starting containers..."
+            docker-compose -f docker-compose.prod.yml up -d
+            
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 15
+            
+            echo "🔍 Checking container status..."
+            docker-compose -f docker-compose.prod.yml ps
+          REMOTE_SCRIPT
+
+      - name: Verify deployment
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+        run: |
+          ssh -i $SSH_KEY -p $SSH_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST bash -s << 'REMOTE_SCRIPT'
+            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            cd "$DEPLOY_PATH"
+            echo "📋 Container status:"
+            docker-compose -f docker-compose.prod.yml ps
+            echo ""
+            echo "📋 Container logs (last 30 lines):"
+            docker-compose -f docker-compose.prod.yml logs --tail=30
+            echo ""
+            echo "🔍 Health check:"
+            docker-compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+          REMOTE_SCRIPT
 
       - name: Deployment info
         id: deploy-info
         run: |
-          FRONTEND_URL="${{ steps.render-urls.outputs.frontend_url }}"
-          BACKEND_URL="${{ steps.render-urls.outputs.backend_url }}"
-          
-          if [ -n "$FRONTEND_URL" ]; then
-            echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Frontend deployed: $FRONTEND_URL"
-          elif [ -n "$BACKEND_URL" ]; then
-            echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Backend deployed: $BACKEND_URL"
-          else
-            echo "url=https://your-production-url.onrender.com" >> $GITHUB_OUTPUT
-            echo "✅ Production deployment pipeline completed!"
-          fi
+          echo "url=https://easy-dash.dev" >> $GITHUB_OUTPUT
+          echo "✅ Production deployment completed!"
 
       - name: Notify deployment
         if: success()
         run: |
-          echo "✅ Successfully deployed to PRODUCTION on Render!"
-          echo "🌐 Production URL: ${{ steps.deploy-info.outputs.url }}"
-          if [ -n "${{ steps.render-urls.outputs.frontend_url }}" ]; then
-            echo "📱 Frontend: ${{ steps.render-urls.outputs.frontend_url }}"
-          fi
-          if [ -n "${{ steps.render-urls.outputs.backend_url }}" ]; then
-            echo "🔧 Backend: ${{ steps.render-urls.outputs.backend_url }}"
-          fi
+          echo "✅ Successfully deployed to PRODUCTION on DigitalOcean!"
+          echo "🌐 Production URL: https://easy-dash.dev"
+          echo "📱 Frontend: https://easy-dash.dev"
+          echo "🔧 Backend API: https://easy-dash.dev/api"
