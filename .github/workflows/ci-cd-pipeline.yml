@@ -854,14 +854,31 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
-            if [ -f /etc/nginx/sites-available/easy-dash.dev ]; then
-              echo "✅ Nginx config already exists"
-            else
-              echo "📝 Setting up Nginx configuration..."
-              mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
-              ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/
-              nginx -t && systemctl reload nginx || echo "⚠️  Nginx test failed, please check manually"
+            echo "📝 Setting up Nginx configuration..."
+            
+            if [ -f /etc/nginx/sites-available/default ]; then
+              echo "🔄 Disabling default nginx site..."
+              rm -f /etc/nginx/sites-enabled/default
             fi
+            
+            echo "📄 Installing easy-dash.dev configuration..."
+            mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
+            ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/easy-dash.dev
+            
+            echo "🔍 Testing nginx configuration..."
+            if nginx -t; then
+              echo "✅ Nginx configuration is valid"
+              echo "🔄 Reloading nginx..."
+              systemctl reload nginx || systemctl restart nginx
+              echo "✅ Nginx reloaded successfully"
+            else
+              echo "❌ Nginx configuration test failed!"
+              echo "⚠️  Please check the configuration manually"
+              exit 1
+            fi
+            
+            echo "📋 Active nginx sites:"
+            ls -la /etc/nginx/sites-enabled/ || echo "No sites enabled"
           REMOTE_SCRIPT
 
       - name: Login to GitHub Container Registry
