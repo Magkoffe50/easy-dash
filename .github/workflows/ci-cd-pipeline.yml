@@ -190,24 +190,51 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Extract metadata for frontend
-        id: meta-frontend
+      - name: Extract metadata for frontend staging
+        id: meta-frontend-staging
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
           tags: |
-            type=sha,prefix={{branch}}-
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-,suffix=-staging
+            type=sha,suffix=-staging
+            type=raw,value=latest-staging,enable={{is_default_branch}}
 
-      - name: Build and push frontend Docker image
+      - name: Build and push frontend Docker image (staging)
         uses: docker/build-push-action@v5
         with:
           context: ./front
           file: ./front/Dockerfile
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta-frontend-staging.outputs.tags }}
+          labels: ${{ steps.meta-frontend-staging.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL_STAGING || 'https://your-backend-service.onrender.com/api' }}
+            NEXT_PUBLIC_APP_ENV=staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract metadata for frontend production
+        id: meta-frontend-production
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=sha,prefix={{branch}}-,suffix=-production
+            type=sha,suffix=-production
+            type=raw,value=latest-production,enable={{is_default_branch}}
+
+      - name: Build and push frontend Docker image (production)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./front
+          file: ./front/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend-production.outputs.tags }}
+          labels: ${{ steps.meta-frontend-production.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL_PRODUCTION || 'https://easy-dash.dev/api' }}
+            NEXT_PUBLIC_APP_ENV=production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -215,7 +242,8 @@ jobs:
         run: |
           echo "✅ Docker images built and pushed successfully!"
           echo "Backend: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}"
-          echo "Frontend: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}"
+          echo "Frontend (staging): ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-staging"
+          echo "Frontend (production): ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-production"
 
   lint:
     name: Lint Code
@@ -430,7 +458,7 @@ jobs:
         id: deploy-frontend
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-staging
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ]; then
@@ -578,7 +606,7 @@ jobs:
       - name: Set lowercase image names
         run: |
           echo "BACKEND_IMAGE=$(echo '${{ env.REGISTRY }}/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/backend:sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=$(echo '${{ env.REGISTRY }}/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend:sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo '${{ env.REGISTRY }}/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/frontend:sha-$(echo ${{ github.sha }} | cut -c1-7)-production" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Setup SSH

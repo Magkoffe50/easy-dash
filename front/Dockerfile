@@ -2,10 +2,16 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
+FROM base AS dependencies
+COPY package*.json ./
+RUN npm install
+
 FROM base AS build
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_APP_ENV
+ARG NEXT_PUBLIC_API_URL=https://easy-dash.dev/api
+ARG NEXT_PUBLIC_APP_ENV=production
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
+RUN NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV} npm run build
 
 FROM base AS production
 ENV NODE_ENV=production
