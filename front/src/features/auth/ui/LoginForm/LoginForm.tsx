@@ -10,7 +10,6 @@ import {
   Checkbox,
   FormControlLabel,
   IconButton,
-  InputAdornment,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { LoginCredentials } from '../../model/types';
@@ -74,6 +73,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             onChange={handleChange('email')}
             required
             size="lg"
+            autoComplete="username"
           />
         </Box>
 
@@ -105,19 +105,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             onChange={handleChange('password')}
             required
             size="lg"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleTogglePasswordVisibility}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+            autoComplete="current-password"
+            endIcon={
+              <IconButton
+                aria-label="toggle password visibility"
+                onClick={handleTogglePasswordVisibility}
+                edge="end"
+                size="small"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            }
           />
         </Box>
 

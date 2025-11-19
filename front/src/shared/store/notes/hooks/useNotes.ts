@@ -3,7 +3,7 @@ import { useNotesStore } from '../notesStore';
 import { useUserStore } from '../../user/userStore';
 import { api } from '@/shared/api';
 import { Note, NoteCreatePayload, NoteUpdatePayload } from '@/entities/note';
-import { useNotificationsStore } from '../../notifications/notificationsStore';
+import useNotifications from '../../notifications/hooks/useNotifications';
 import { buildNotesQueryString } from '../utils/notesQueryHelpers';
 import type { SortOption, NotesQueryParams } from '../types';
 
@@ -12,7 +12,7 @@ export type { SortOption, NotesQueryParams };
 export const useNotes = (queryParams?: NotesQueryParams) => {
   const notesStore = useNotesStore();
   const userId = useUserStore((state) => state.user?.id);
-  const notifications = useNotificationsStore();
+  const { showError, showSuccess } = useNotifications();
 
   const fetchNotes = useCallback(async () => {
     notesStore.setLoading(true);
@@ -21,10 +21,7 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
     const [data, error] = await api.get<Note[]>(`/notes${queryString}`);
 
     if (error) {
-      notifications.addNotification({
-        message: `Failed to fetch notes: ${error.message}`,
-        severity: 'error',
-      });
+      showError(`Failed to fetch notes: ${error.message}`);
       notesStore.setLoading(false);
       return;
     }
@@ -34,7 +31,7 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
     }
 
     notesStore.setLoading(false);
-  }, [notesStore, notifications, queryParams]);
+  }, [notesStore, showError, queryParams]);
 
   useEffect(() => {
     if (userId) {
@@ -53,18 +50,12 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
   const createNote = useCallback(
     async (payload: NoteCreatePayload): Promise<Note | null> => {
       if (!payload.title || !payload.description) {
-        notifications.addNotification({
-          message: 'Please fill in title and description',
-          severity: 'error',
-        });
+        showError('Please fill in title and description');
         return null;
       }
 
       if (!userId) {
-        notifications.addNotification({
-          message: 'User not found',
-          severity: 'error',
-        });
+        showError('User not found');
         return null;
       }
 
@@ -75,25 +66,19 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
       notesStore.setLoading(false);
 
       if (error) {
-        notifications.addNotification({
-          message: `Failed to create note: ${error.message}`,
-          severity: 'error',
-        });
+        showError(`Failed to create note: ${error.message}`);
         return null;
       }
 
       if (data) {
         notesStore.addNote(data);
-        notifications.addNotification({
-          message: 'Note created successfully',
-          severity: 'success',
-        });
+        showSuccess('Note created successfully');
         return data;
       }
 
       return null;
     },
-    [userId, notesStore, notifications],
+    [userId, notesStore, showError, showSuccess],
   );
 
   const updateNote = useCallback(
@@ -102,10 +87,7 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
       payload: NoteUpdatePayload,
     ): Promise<Note | null> => {
       if (!userId) {
-        notifications.addNotification({
-          message: 'User not found',
-          severity: 'error',
-        });
+        showError('User not found');
         return null;
       }
 
@@ -116,34 +98,25 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
       notesStore.setLoading(false);
 
       if (error) {
-        notifications.addNotification({
-          message: `Failed to update note: ${error.message}`,
-          severity: 'error',
-        });
+        showError(`Failed to update note: ${error.message}`);
         return null;
       }
 
       if (data) {
         notesStore.updateNote(noteId, data);
-        notifications.addNotification({
-          message: 'Note updated successfully',
-          severity: 'success',
-        });
+        showSuccess('Note updated successfully');
         return data;
       }
 
       return null;
     },
-    [userId, notesStore, notifications],
+    [userId, notesStore, showError, showSuccess],
   );
 
   const deleteNote = useCallback(
     async (noteId: string): Promise<boolean> => {
       if (!userId) {
-        notifications.addNotification({
-          message: 'User not found',
-          severity: 'error',
-        });
+        showError('User not found');
         return false;
       }
 
@@ -154,21 +127,15 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
       notesStore.setLoading(false);
 
       if (error) {
-        notifications.addNotification({
-          message: `Failed to delete note: ${error.message}`,
-          severity: 'error',
-        });
+        showError(`Failed to delete note: ${error.message}`);
         return false;
       }
 
       notesStore.removeNote(noteId);
-      notifications.addNotification({
-        message: 'Note deleted successfully',
-        severity: 'success',
-      });
+      showSuccess('Note deleted successfully');
       return true;
     },
-    [userId, notesStore, notifications],
+    [userId, notesStore, showError, showSuccess],
   );
 
   const getNoteById = useCallback(
@@ -180,16 +147,13 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
       notesStore.setLoading(false);
 
       if (error) {
-        notifications.addNotification({
-          message: `Failed to fetch note: ${error.message}`,
-          severity: 'error',
-        });
+        showError(`Failed to fetch note: ${error.message}`);
         return null;
       }
 
       return data;
     },
-    [notesStore, notifications],
+    [notesStore, showError],
   );
 
   return {

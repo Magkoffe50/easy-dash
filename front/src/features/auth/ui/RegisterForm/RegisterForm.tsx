@@ -9,7 +9,6 @@ import {
   Alert,
   Link as MuiLink,
   IconButton,
-  InputAdornment,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { RegisterData } from '../../model/types';
@@ -119,19 +118,16 @@ export const RegisterForm: FC = () => {
             onChange={handleChange('password')}
             required
             size="lg"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleTogglePasswordVisibility}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+            endIcon={
+              <IconButton
+                aria-label="toggle password visibility"
+                onClick={handleTogglePasswordVisibility}
+                edge="end"
+                size="small"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            }
           />
         </Box>
 
@@ -144,19 +140,16 @@ export const RegisterForm: FC = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             size="lg"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle confirm password visibility"
-                    onClick={handleToggleConfirmPasswordVisibility}
-                    edge="end"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+            endIcon={
+              <IconButton
+                aria-label="toggle confirm password visibility"
+                onClick={handleToggleConfirmPasswordVisibility}
+                edge="end"
+                size="small"
+              >
+                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            }
             error={
               confirmPassword !== '' && formData.password !== confirmPassword
             }
