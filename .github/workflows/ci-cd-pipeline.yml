@@ -682,7 +682,7 @@ jobs:
           
           echo "✅ SSH setup complete"
 
-      - name: Install Docker on server
+      - name: Ensure Docker is installed on server
         env:
           SSH_KEY: ~/.ssh/deploy_key
           SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
@@ -893,6 +893,8 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
@@ -900,7 +902,21 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/opt/easy-dash' }}"
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
+            FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
+            
             cd "$DEPLOY_PATH"
+            
+            if [ -f .env ]; then
+              echo "📄 Loading environment variables from .env file..."
+              set -a
+              source .env
+              set +a
+            fi
+            
+            export BACKEND_IMAGE="$BACKEND_IMAGE"
+            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
+            
             echo "📋 Container status:"
             docker-compose -f docker-compose.prod.yml ps
             echo ""
