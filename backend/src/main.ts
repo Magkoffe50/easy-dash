@@ -18,14 +18,12 @@ async function bootstrap() {
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-  const nodeEnv = process.env.NODE_ENV || 'development';
+  // const nodeEnv = process.env.NODE_ENV || 'development';
 
-  if (nodeEnv !== 'production') {
-    const uploadsPath = path.join(process.cwd(), 'uploads');
-    app.useStaticAssets(uploadsPath, {
-      prefix: '/uploads',
-    });
-  }
+  // const uploadsPath = path.join(process.cwd(), 'uploads');
+  // app.useStaticAssets(uploadsPath, {
+  //   prefix: '/uploads',
+  // });
 
   app.enableCors(getCorsConfig());
 

@@ -21,35 +21,29 @@ export class StorageService {
 
   constructor(private configService: ConfigService) {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
-    this.useLocalStorage = nodeEnv !== 'production';
 
-    if (this.useLocalStorage) {
-      this.uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
-      this.publicUrl = this.configService.get<string>(
-        'LOCAL_STORAGE_PUBLIC_URL',
-        'http://localhost:3001/uploads',
-      );
-      this.bucketName = '';
-      void this.initializeLocalStorage();
-    } else {
-      const accountId = this.configService.get<string>('R2_ACCOUNT_ID');
-      const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
-      const secretAccessKey = this.configService.get<string>(
-        'R2_SECRET_ACCESS_KEY',
-      );
-      const bucketName = this.configService.get<string>('R2_BUCKET_NAME');
-      const publicUrl = this.configService.get<string>('R2_PUBLIC_URL');
+    const accountId = this.configService.get<string>('R2_ACCOUNT_ID');
+    const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
+    const secretAccessKey = this.configService.get<string>(
+      'R2_SECRET_ACCESS_KEY',
+    );
+    const bucketName = this.configService.get<string>('R2_BUCKET_NAME');
+    const publicUrl = this.configService.get<string>('R2_PUBLIC_URL');
 
-      if (
-        !accountId ||
-        !accessKeyId ||
-        !secretAccessKey ||
-        !bucketName ||
-        !publicUrl
-      ) {
-        throw new Error('Missing required R2 configuration');
-      }
+    const hasR2Config =
+      accountId &&
+      accessKeyId &&
+      secretAccessKey &&
+      bucketName &&
+      publicUrl &&
+      accountId.trim() !== '' &&
+      accessKeyId.trim() !== '' &&
+      secretAccessKey.trim() !== '' &&
+      bucketName.trim() !== '' &&
+      publicUrl.trim() !== '';
 
+    if (hasR2Config) {
+      this.useLocalStorage = false;
       this.bucketName = bucketName;
       this.publicUrl = publicUrl;
 
@@ -61,6 +55,23 @@ export class StorageService {
           secretAccessKey,
         },
       });
+    } else {
+      this.useLocalStorage = true;
+      this.uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+      this.publicUrl = this.configService.get<string>(
+        'LOCAL_STORAGE_PUBLIC_URL',
+        nodeEnv === 'production'
+          ? 'https://easy-dash.dev/uploads'
+          : 'http://localhost:3001/uploads',
+      );
+      this.bucketName = '';
+      void this.initializeLocalStorage();
+
+      if (nodeEnv === 'production') {
+        console.warn(
+          '⚠️  R2 configuration not found. Using local file storage in production.',
+        );
+      }
     }
   }
 
