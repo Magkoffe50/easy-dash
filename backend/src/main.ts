@@ -49,13 +49,13 @@ async function bootstrap() {
     .addTag('auth')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  // Swagger at root path, which with global prefix 'api' becomes /api
-  SwaggerModule.setup('', app, document);
+  // Swagger at /api/docs to avoid conflict with API routes
+  SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3001;
 
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
-  console.log(`Swagger documentation: http://localhost:${port}/api`);
+  console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
 }
 void bootstrap();
