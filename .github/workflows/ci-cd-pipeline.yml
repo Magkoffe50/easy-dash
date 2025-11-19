@@ -587,14 +587,67 @@ jobs:
           chmod 700 ~/.ssh
           
           echo "🔑 Setting up SSH key..."
-          echo "${{ secrets.PRODUCTION_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          
+          if [ -z "${{ secrets.PRODUCTION_SSH_KEY }}" ]; then
+            echo "❌ PRODUCTION_SSH_KEY secret is empty"
+            exit 1
+          fi
+          
+          echo "${{ secrets.PRODUCTION_SSH_KEY }}" | \
+            tr -d '\r' | \
+            sed 's/[[:space:]]*$//' > ~/.ssh/deploy_key.tmp
+          
+          if [ ! -s ~/.ssh/deploy_key.tmp ]; then
+            echo "❌ SSH key is empty after processing"
+            exit 1
+          fi
+          
+          if [ "$(tail -c 1 ~/.ssh/deploy_key.tmp)" != "" ]; then
+            echo "" >> ~/.ssh/deploy_key.tmp
+          fi
+          
+          mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
+          
           chmod 600 ~/.ssh/deploy_key
           
           echo "🔍 Validating SSH key format..."
-          if ! ssh-keygen -l -f ~/.ssh/deploy_key &>/dev/null; then
-            echo "❌ Invalid SSH key format"
+          
+          KEY_TYPE=$(head -n 1 ~/.ssh/deploy_key | cut -d' ' -f1)
+          KEY_LENGTH=$(wc -l < ~/.ssh/deploy_key)
+          
+          if [ "$KEY_TYPE" != "-----BEGIN" ]; then
+            echo "❌ Invalid SSH key: Key does not start with '-----BEGIN'"
+            echo "First line: $(head -n 1 ~/.ssh/deploy_key | cut -c1-50)..."
             exit 1
           fi
+          
+          if [ "$KEY_LENGTH" -lt 10 ]; then
+            echo "❌ Invalid SSH key: Key appears to be too short ($KEY_LENGTH lines)"
+            exit 1
+          fi
+          
+          if ! grep -q "PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ Invalid SSH key: Key does not appear to be a private key"
+            echo "⚠️  Make sure you're using the PRIVATE key, not the public key (.pub file)"
+            exit 1
+          fi
+          
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
+            echo "❌ Invalid SSH key: Key validation failed"
+            echo "⚠️  Common issues:"
+            echo "   - Key has incorrect line endings (should be LF, not CRLF)"
+            echo "   - Key is missing final newline"
+            echo "   - Key has extra whitespace"
+            echo "   - Key is corrupted"
+            exit 1
+          fi
+          
+          echo "✅ SSH key format is valid"
+          
+          echo "📋 Key info (for debugging):"
+          echo "   Key type: $(grep -o 'BEGIN [A-Z ]*PRIVATE KEY' ~/.ssh/deploy_key | head -1 || echo 'unknown')"
+          echo "   Key length: $(wc -l < ~/.ssh/deploy_key) lines"
+          echo "   File size: $(wc -c < ~/.ssh/deploy_key) bytes"
           
           echo "🔐 Adding server to known_hosts..."
           ssh-keyscan -H ${{ secrets.PRODUCTION_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
