@@ -774,15 +774,24 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
+          DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
         run: |
           echo "📁 Setting up deployment directory: $DEPLOY_PATH"
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
+            "$SERVER_USER@$SERVER_HOST" \
+            DB_PASSWORD_ENV="$DB_PASSWORD" \
+            JWT_SECRET_ENV="$JWT_SECRET" \
+            DEPLOY_PATH_VAR="$DEPLOY_PATH" \
+            bash << 'REMOTE_SCRIPT'
             set -e
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
+            DEPLOY_PATH="${DEPLOY_PATH_VAR}"
+            DB_PASSWORD_ENV="${DB_PASSWORD_ENV}"
+            JWT_SECRET_ENV="${JWT_SECRET_ENV}"
+            
             echo "Creating directory: $DEPLOY_PATH"
             mkdir -p "$DEPLOY_PATH"
             cd "$DEPLOY_PATH"
@@ -792,24 +801,22 @@ jobs:
             
             if [ ! -f .env ]; then
               echo "⚠️  .env file not found. Creating from GitHub secrets..."
-              DB_PASSWORD="${{ secrets.PRODUCTION_DB_PASSWORD }}"
-              JWT_SECRET="${{ secrets.PRODUCTION_JWT_SECRET }}"
               
-              if [ -z "$DB_PASSWORD" ]; then
+              if [ -z "$DB_PASSWORD_ENV" ]; then
                 echo "⚠️  PRODUCTION_DB_PASSWORD secret not set, using placeholder"
-                DB_PASSWORD="CHANGE_ME"
+                DB_PASSWORD_ENV="CHANGE_ME"
               fi
               
-              if [ -z "$JWT_SECRET" ]; then
+              if [ -z "$JWT_SECRET_ENV" ]; then
                 echo "⚠️  PRODUCTION_JWT_SECRET secret not set, using placeholder"
-                JWT_SECRET="CHANGE_ME"
+                JWT_SECRET_ENV="CHANGE_ME"
               fi
               
               printf '%s\n' \
                 "DB_DATABASE=easy_dash_db" \
                 "DB_USERNAME=postgres" \
-                "DB_PASSWORD=${DB_PASSWORD}" \
-                "JWT_SECRET=${JWT_SECRET}" \
+                "DB_PASSWORD=${DB_PASSWORD_ENV}" \
+                "JWT_SECRET=${JWT_SECRET_ENV}" \
                 "JWT_EXPIRES_IN=24h" \
                 "FRONTEND_URL=https://easy-dash.dev" \
                 "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api" \
@@ -822,21 +829,23 @@ jobs:
             else
               echo "✅ .env file already exists"
               echo "📝 Updating DB_PASSWORD and JWT_SECRET from secrets..."
-              DB_PASSWORD="${{ secrets.PRODUCTION_DB_PASSWORD }}"
-              JWT_SECRET="${{ secrets.PRODUCTION_JWT_SECRET }}"
               
-              if [ -n "$DB_PASSWORD" ]; then
+              if [ -n "$DB_PASSWORD_ENV" ]; then
                 # Escape special characters for sed
-                ESCAPED_PASSWORD=$(printf '%s\n' "$DB_PASSWORD" | sed 's/[[\.*^$()+?{|]/\\&/g')
+                ESCAPED_PASSWORD=$(printf '%s\n' "$DB_PASSWORD_ENV" | sed 's/[[\.*^$()+?{|]/\\&/g')
                 sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${ESCAPED_PASSWORD}/" .env
                 echo "✅ DB_PASSWORD updated"
+              else
+                echo "⚠️  DB_PASSWORD secret not provided, keeping existing value"
               fi
               
-              if [ -n "$JWT_SECRET" ]; then
+              if [ -n "$JWT_SECRET_ENV" ]; then
                 # Escape special characters for sed
-                ESCAPED_SECRET=$(printf '%s\n' "$JWT_SECRET" | sed 's/[[\.*^$()+?{|]/\\&/g')
+                ESCAPED_SECRET=$(printf '%s\n' "$JWT_SECRET_ENV" | sed 's/[[\.*^$()+?{|]/\\&/g')
                 sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${ESCAPED_SECRET}/" .env
                 echo "✅ JWT_SECRET updated"
+              else
+                echo "⚠️  JWT_SECRET secret not provided, keeping existing value"
               fi
             fi
             
