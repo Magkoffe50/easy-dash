@@ -18,14 +18,16 @@ async function bootstrap() {
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-  // const nodeEnv = process.env.NODE_ENV || 'development';
+  // Set global prefix to 'api' for both staging and production
+  // This ensures consistent API routes: /api/auth/*, /api/users/*, etc.
+  // Can be overridden with API_PREFIX env var if needed (e.g., API_PREFIX="" to disable)
+  const apiPrefix = process.env.API_PREFIX || 'api';
+  app.setGlobalPrefix(apiPrefix);
 
   // const uploadsPath = path.join(process.cwd(), 'uploads');
   // app.useStaticAssets(uploadsPath, {
   //   prefix: '/uploads',
   // });
-
-  app.setGlobalPrefix('api');
 
   app.enableCors(getCorsConfig());
 
@@ -49,13 +51,17 @@ async function bootstrap() {
     .addTag('auth')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  // Swagger at /api/docs to avoid conflict with API routes
-  SwaggerModule.setup('docs', app, document);
+  // Swagger path: if apiPrefix is set, it will be at /{apiPrefix}/docs, otherwise at /docs
+  const swaggerPath = apiPrefix ? 'docs' : 'api';
+  SwaggerModule.setup(swaggerPath, app, document);
 
   const port = process.env.PORT || 3001;
 
   await app.listen(port);
+  const basePath = apiPrefix ? `/${apiPrefix}` : '';
   console.log(`Application is running on: http://localhost:${port}`);
-  console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
+  console.log(
+    `Swagger documentation: http://localhost:${port}${basePath}/docs`,
+  );
 }
 void bootstrap();
