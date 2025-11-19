@@ -30,10 +30,10 @@ const getSslConfig = (
 const getCommonTypeOrmOptions = (
   configService: ConfigService,
   ssl: boolean | object,
-): Partial<TypeOrmModuleOptions> => {
+) => {
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   return {
-    type: 'postgres',
+    type: 'postgres' as const,
     entities: [ENTITIES_PATH],
     synchronize: nodeEnv !== 'production',
     logging: nodeEnv === 'development',
@@ -50,9 +50,11 @@ export const getDatabaseConfig = (
     const url = new URL(databaseUrl);
     const host = url.hostname;
     const sslConfig = getSslConfig(configService, host);
+    const commonOptions = getCommonTypeOrmOptions(configService, sslConfig);
 
     return {
-      ...getCommonTypeOrmOptions(configService, sslConfig),
+      ...commonOptions,
+      type: 'postgres' as const,
       host,
       port: parseInt(url.port, 10) || 5432,
       username: url.username,
@@ -63,13 +65,16 @@ export const getDatabaseConfig = (
 
   const host = configService.get<string>('DB_HOST', 'localhost');
   const sslConfig = getSslConfig(configService, host);
-  const port = configService.get<number>('DB_PORT', 5432);
-  const username = configService.get<string>('DB_USERNAME', 'postgres');
-  const password = configService.get<string>('DB_PASSWORD', '');
-  const database = configService.get<string>('DB_DATABASE', '');
+  const commonOptions = getCommonTypeOrmOptions(configService, sslConfig);
+  const portValue = configService.get<string>('DB_PORT');
+  const port = portValue ? parseInt(portValue, 10) : 5432;
+  const username = configService.get<string>('DB_USERNAME') || 'postgres';
+  const password = configService.get<string>('DB_PASSWORD') || '';
+  const database = configService.get<string>('DB_DATABASE') || '';
 
   return {
-    ...getCommonTypeOrmOptions(configService, sslConfig),
+    ...commonOptions,
+    type: 'postgres' as const,
     host,
     port,
     username,
