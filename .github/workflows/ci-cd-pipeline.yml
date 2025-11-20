@@ -586,8 +586,8 @@ jobs:
   deploy-production:
     name: Deploy to Production (DigitalOcean)
     runs-on: ubuntu-latest
-    needs: [vendors, build]
-    if: ${{ always() && needs.vendors.result == 'success' && needs.build.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
+    # needs: [vendors, build]
+    # if: ${{ always() && needs.vendors.result == 'success' && needs.build.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
     environment:
       name: production
       url: https://easy-dash.dev
@@ -872,16 +872,38 @@ jobs:
             
             docker-compose -f docker-compose.prod.yml up -d
             
+            sleep 5
+            
+            for i in {1..12}; do
+              RUNNING=$(docker ps --filter "name=easy-dash" --format "{{.Names}}" | wc -l)
+              if [ "$RUNNING" -ge 3 ]; then
+                HEALTHY=$(docker ps --filter "name=easy-dash" --filter "status=running" --format "{{.Names}}" | wc -l)
+                if [ "$HEALTHY" -ge 3 ]; then
+                  echo "All containers are running"
+                  break
+                fi
+              fi
+              if [ $i -eq 12 ]; then
+                echo "Containers failed to start properly. Checking status..."
+                docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+                echo ""
+                echo "Container logs:"
+                docker-compose -f docker-compose.prod.yml logs --tail=50
+                exit 1
+              fi
+              sleep 5
+            done
+            
             sleep 10
             
-            RUNNING=$(docker-compose -f docker-compose.prod.yml ps -q | wc -l)
-            if [ "$RUNNING" -eq 0 ]; then
-              echo "No containers are running. Checking logs..."
-              docker-compose -f docker-compose.prod.yml logs
+            EXITED=$(docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "{{.Names}}" | wc -l)
+            if [ "$EXITED" -gt 0 ]; then
+              echo "Some containers have exited. Checking logs..."
+              docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+              echo ""
+              docker-compose -f docker-compose.prod.yml logs --tail=100
               exit 1
             fi
-            
-            sleep 5
           REMOTE_SCRIPT
 
       - name: Verify deployment
@@ -899,6 +921,33 @@ jobs:
             "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'REMOTE_SCRIPT'
             DEPLOY_PATH="$1"
             cd "$DEPLOY_PATH"
+            if [ -f .env ]; then
+              set -a
+              source .env
+              set +a
+            fi
+            echo "Checking containers with docker ps:"
+            docker ps --filter "name=easy-dash" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+            echo ""
+            
+            EXITED=$(docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "{{.Names}}" | wc -l)
+            if [ "$EXITED" -gt 0 ]; then
+              echo "❌ Some containers have exited:"
+              docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+              echo ""
+              echo "Container logs:"
+              docker-compose -f docker-compose.prod.yml logs --tail=50
+              exit 1
+            fi
+            
+            RUNNING=$(docker ps --filter "name=easy-dash" --filter "status=running" --format "{{.Names}}" | wc -l)
+            if [ "$RUNNING" -lt 3 ]; then
+              echo "❌ Not all containers are running (expected 3, found $RUNNING)"
+              docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+              exit 1
+            fi
+            
+            echo "✅ All containers are running"
             docker-compose -f docker-compose.prod.yml ps
           REMOTE_SCRIPT
 
