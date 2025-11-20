@@ -812,11 +812,11 @@ jobs:
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" "$BACKEND_IMAGE" "$FRONTEND_IMAGE" << 'REMOTE_SCRIPT'
             set -e
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
-            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
-            FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
+            DEPLOY_PATH="$1"
+            BACKEND_IMAGE="$2"
+            FRONTEND_IMAGE="$3"
             
             cd "$DEPLOY_PATH"
             
