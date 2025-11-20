@@ -778,102 +778,174 @@ jobs:
           JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
         run: |
           echo "📁 Setting up deployment directory: $DEPLOY_PATH"
-          # Check if secrets are set (for debugging)
+          
           if [ -z "$DB_PASSWORD" ]; then
-            echo "⚠️  WARNING: PRODUCTION_DB_PASSWORD secret is not set!"
+            echo "❌ ERROR: PRODUCTION_DB_PASSWORD secret is not set!"
+            exit 1
           else
             echo "✅ PRODUCTION_DB_PASSWORD secret is set (length: ${#DB_PASSWORD})"
           fi
           
           if [ -z "$JWT_SECRET" ]; then
-            echo "⚠️  WARNING: PRODUCTION_JWT_SECRET secret is not set!"
+            echo "❌ ERROR: PRODUCTION_JWT_SECRET secret is not set!"
+            exit 1
           else
             echo "✅ PRODUCTION_JWT_SECRET secret is set (length: ${#JWT_SECRET})"
           fi
           
-          # Prepare secrets for remote script (escape for safe passing)
-          DB_PASSWORD_ESC=$(printf '%q' "$DB_PASSWORD")
-          JWT_SECRET_ESC=$(printf '%q' "$JWT_SECRET")
+          DB_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w 0)
+          JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 -w 0)
           
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" "bash -s" << REMOTE_SCRIPT
+            "$SERVER_USER@$SERVER_HOST" bash -s << REMOTE_SCRIPT
             set -e
             DEPLOY_PATH="$DEPLOY_PATH"
-            eval "DB_PASSWORD_ENV=$DB_PASSWORD_ESC"
-            eval "JWT_SECRET_ENV=$JWT_SECRET_ESC"
+            DB_PASSWORD_B64="$DB_PASSWORD_B64"
+            JWT_SECRET_B64="$JWT_SECRET_B64"
+            
+            DB_PASSWORD_ENV=$(echo -n "\$DB_PASSWORD_B64" | base64 -d)
+            JWT_SECRET_ENV=$(echo -n "\$JWT_SECRET_B64" | base64 -d)
             
             echo "🔍 Debug: DB_PASSWORD_ENV is set: \$([ -n \"\$DB_PASSWORD_ENV\" ] && echo 'yes' || echo 'no')"
             echo "🔍 Debug: JWT_SECRET_ENV is set: \$([ -n \"\$JWT_SECRET_ENV\" ] && echo 'yes' || echo 'no')"
+            
+            if [ -z "\$DB_PASSWORD_ENV" ]; then
+              echo "❌ ERROR: Failed to decode DB_PASSWORD"
+              exit 1
+            fi
+            
+            if [ -z "\$JWT_SECRET_ENV" ]; then
+              echo "❌ ERROR: Failed to decode JWT_SECRET"
+              exit 1
+            fi
             
             echo "Creating directory: \$DEPLOY_PATH"
             mkdir -p "\$DEPLOY_PATH"
             cd "\$DEPLOY_PATH"
             echo "Current directory: \$(pwd)"
-            echo "Directory contents before:"
-            ls -la || echo "Directory is empty or listing failed"
             
             if [ ! -f .env ]; then
               echo "⚠️  .env file not found. Creating from GitHub secrets..."
               
-              if [ -z "$DB_PASSWORD_ENV" ]; then
-                echo "⚠️  PRODUCTION_DB_PASSWORD secret not set, using placeholder"
-                DB_PASSWORD_ENV="CHANGE_ME"
-              fi
+              {
+                echo "DB_DATABASE=easy_dash_db"
+                echo "DB_USERNAME=postgres"
+                echo "DB_PASSWORD=\${DB_PASSWORD_ENV}"
+                echo "JWT_SECRET=\${JWT_SECRET_ENV}"
+                echo "JWT_EXPIRES_IN=24h"
+                echo "FRONTEND_URL=https://easy-dash.dev"
+                echo "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api"
+                echo "R2_ACCOUNT_ID="
+                echo "R2_ACCESS_KEY_ID="
+                echo "R2_SECRET_ACCESS_KEY="
+                echo "R2_BUCKET_NAME="
+                echo "R2_PUBLIC_URL="
+              } > .env.tmp
               
-              if [ -z "$JWT_SECRET_ENV" ]; then
-                echo "⚠️  PRODUCTION_JWT_SECRET secret not set, using placeholder"
-                JWT_SECRET_ENV="CHANGE_ME"
-              fi
+              while IFS= read -r line; do
+                eval echo "\$line"
+              done < .env.tmp > .env
+              rm .env.tmp
               
-              printf '%s\n' \
-                "DB_DATABASE=easy_dash_db" \
-                "DB_USERNAME=postgres" \
-                "DB_PASSWORD=${DB_PASSWORD_ENV}" \
-                "JWT_SECRET=${JWT_SECRET_ENV}" \
-                "JWT_EXPIRES_IN=24h" \
-                "FRONTEND_URL=https://easy-dash.dev" \
-                "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api" \
-                "R2_ACCOUNT_ID=" \
-                "R2_ACCESS_KEY_ID=" \
-                "R2_SECRET_ACCESS_KEY=" \
-                "R2_BUCKET_NAME=" \
-                "R2_PUBLIC_URL=" > .env
               echo "✅ .env file created from secrets"
             else
               echo "✅ .env file already exists"
               echo "📝 Updating DB_PASSWORD and JWT_SECRET from secrets..."
-              echo "🔍 Current .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env || echo 'not found')"
-              echo "🔍 Current .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env || echo 'not found')"
               
-              if [ -n "\$DB_PASSWORD_ENV" ]; then
-                echo "🔍 Updating DB_PASSWORD (length: \${#DB_PASSWORD_ENV})"
-                # Use a more robust approach: delete old line and append new one
-                sed -i '/^DB_PASSWORD=/d' .env
-                printf 'DB_PASSWORD=%s\n' "\$DB_PASSWORD_ENV" >> .env
-                echo "✅ DB_PASSWORD updated"
-                echo "🔍 New .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env | head -1)"
-              else
-                echo "⚠️  DB_PASSWORD secret not provided, keeping existing value"
+              if grep -q "^DB_PASSWORD=" .env; then
+                sed -i "/^DB_PASSWORD=/d" .env
               fi
+              echo "DB_PASSWORD=\${DB_PASSWORD_ENV}" >> .env
               
-              if [ -n "\$JWT_SECRET_ENV" ]; then
-                echo "🔍 Updating JWT_SECRET (length: \${#JWT_SECRET_ENV})"
-                # Use a more robust approach: delete old line and append new one
-                sed -i '/^JWT_SECRET=/d' .env
-                printf 'JWT_SECRET=%s\n' "\$JWT_SECRET_ENV" >> .env
-                echo "✅ JWT_SECRET updated"
-                echo "🔍 New .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env | head -1)"
-              else
-                echo "⚠️  JWT_SECRET secret not provided, keeping existing value"
+              if grep -q "^JWT_SECRET=" .env; then
+                sed -i "/^JWT_SECRET=/d" .env
               fi
+              echo "JWT_SECRET=\${JWT_SECRET_ENV}" >> .env
+              
+              while IFS= read -r line; do
+                eval echo "\$line"
+              done < .env > .env.new
+              mv .env.new .env
+              
+              echo "✅ DB_PASSWORD and JWT_SECRET updated"
             fi
             
-            echo "Directory contents after:"
-            ls -la
+            echo "🔍 Verifying .env file contents:"
+            if grep -q "^DB_PASSWORD=CHANGE_ME" .env || grep -q "^DB_PASSWORD=$" .env; then
+              echo "❌ ERROR: DB_PASSWORD is still set to CHANGE_ME or empty!"
+              exit 1
+            fi
+            if grep -q "^JWT_SECRET=CHANGE_ME" .env || grep -q "^JWT_SECRET=$" .env; then
+              echo "❌ ERROR: JWT_SECRET is still set to CHANGE_ME or empty!"
+              exit 1
+            fi
+            DB_PASSWORD_LEN=\$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | wc -c)
+            JWT_SECRET_LEN=\$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | wc -c)
+            echo "✅ DB_PASSWORD is set (length: \$((DB_PASSWORD_LEN - 1)))"
+            echo "✅ JWT_SECRET is set (length: \$((JWT_SECRET_LEN - 1)))"
+            echo "DB_PASSWORD preview: \$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | head -c 10)..."
+            echo "JWT_SECRET preview: \$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | head -c 10)..."
           REMOTE_SCRIPT
+
+      - name: Verify .env file on server
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
+        run: |
+          echo "🔍 Verifying .env file on server..."
+          ssh -i "$SSH_KEY" \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SERVER_USER@$SERVER_HOST" bash << 'VERIFY_SCRIPT'
+            DEPLOY_PATH="$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            
+            if [ ! -f .env ]; then
+              echo "❌ ERROR: .env file not found!"
+              exit 1
+            fi
+            
+            echo "📄 .env file exists"
+            echo ""
+            echo "Checking DB_PASSWORD:"
+            if grep -q "^DB_PASSWORD=CHANGE_ME" .env; then
+              echo "❌ ERROR: DB_PASSWORD is still CHANGE_ME"
+              exit 1
+            elif grep -q "^DB_PASSWORD=$" .env; then
+              echo "❌ ERROR: DB_PASSWORD is empty"
+              exit 1
+            else
+              DB_PASS=\$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2-)
+              DB_PASS_LEN=\${#DB_PASS}
+              echo "✅ DB_PASSWORD is set (length: \$DB_PASS_LEN)"
+              echo "   Preview: \${DB_PASS:0:10}..."
+            fi
+            
+            echo ""
+            echo "Checking JWT_SECRET:"
+            if grep -q "^JWT_SECRET=CHANGE_ME" .env; then
+              echo "❌ ERROR: JWT_SECRET is still CHANGE_ME"
+              exit 1
+            elif grep -q "^JWT_SECRET=$" .env; then
+              echo "❌ ERROR: JWT_SECRET is empty"
+              exit 1
+            else
+              JWT_SEC=\$(grep '^JWT_SECRET=' .env | cut -d'=' -f2-)
+              JWT_SEC_LEN=\${#JWT_SEC}
+              echo "✅ JWT_SECRET is set (length: \$JWT_SEC_LEN)"
+              echo "   Preview: \${JWT_SEC:0:10}..."
+            fi
+            
+            echo ""
+            echo "✅ All secrets are properly configured!"
+          VERIFY_SCRIPT
 
       - name: Copy deployment files
         env:
