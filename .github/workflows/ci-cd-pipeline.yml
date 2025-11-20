@@ -845,21 +845,27 @@ jobs:
             else
               echo "✅ .env file already exists"
               echo "📝 Updating DB_PASSWORD and JWT_SECRET from secrets..."
+              echo "🔍 Current .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env || echo 'not found')"
+              echo "🔍 Current .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env || echo 'not found')"
               
-              if [ -n "$DB_PASSWORD_ENV" ]; then
-                # Escape special characters for sed
-                ESCAPED_PASSWORD=$(printf '%s\n' "$DB_PASSWORD_ENV" | sed 's/[[\.*^$()+?{|]/\\&/g')
-                sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${ESCAPED_PASSWORD}/" .env
+              if [ -n "\$DB_PASSWORD_ENV" ]; then
+                echo "🔍 Updating DB_PASSWORD (length: \${#DB_PASSWORD_ENV})"
+                # Use a more robust approach: delete old line and append new one
+                sed -i '/^DB_PASSWORD=/d' .env
+                printf 'DB_PASSWORD=%s\n' "\$DB_PASSWORD_ENV" >> .env
                 echo "✅ DB_PASSWORD updated"
+                echo "🔍 New .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env)"
               else
                 echo "⚠️  DB_PASSWORD secret not provided, keeping existing value"
               fi
               
-              if [ -n "$JWT_SECRET_ENV" ]; then
-                # Escape special characters for sed
-                ESCAPED_SECRET=$(printf '%s\n' "$JWT_SECRET_ENV" | sed 's/[[\.*^$()+?{|]/\\&/g')
-                sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${ESCAPED_SECRET}/" .env
+              if [ -n "\$JWT_SECRET_ENV" ]; then
+                echo "🔍 Updating JWT_SECRET (length: \${#JWT_SECRET_ENV})"
+                # Use a more robust approach: delete old line and append new one
+                sed -i '/^JWT_SECRET=/d' .env
+                printf 'JWT_SECRET=%s\n' "\$JWT_SECRET_ENV" >> .env
                 echo "✅ JWT_SECRET updated"
+                echo "🔍 New .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env)"
               else
                 echo "⚠️  JWT_SECRET secret not provided, keeping existing value"
               fi
