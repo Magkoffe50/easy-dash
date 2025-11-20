@@ -904,12 +904,12 @@ jobs:
               echo "❌ ERROR: JWT_SECRET is still set to CHANGE_ME or empty!"
               exit 1
             fi
-            DB_PASSWORD_LEN=\$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | wc -c)
-            JWT_SECRET_LEN=\$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | wc -c)
-            echo "✅ DB_PASSWORD is set (length: \$((DB_PASSWORD_LEN - 1)))"
-            echo "✅ JWT_SECRET is set (length: \$((JWT_SECRET_LEN - 1)))"
-            echo "DB_PASSWORD preview: \$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | head -c 10)..."
-            echo "JWT_SECRET preview: \$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | head -c 10)..."
+            DB_PASSWORD_LEN=$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | wc -c)
+            JWT_SECRET_LEN=$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | wc -c)
+            echo "✅ DB_PASSWORD is set (length: $((DB_PASSWORD_LEN - 1)))"
+            echo "✅ JWT_SECRET is set (length: $((JWT_SECRET_LEN - 1)))"
+            echo "DB_PASSWORD preview: $(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | head -c 10)..."
+            echo "JWT_SECRET preview: $(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | head -c 10)..."
           REMOTE_SCRIPT
 
       - name: Verify .env file on server
@@ -925,8 +925,8 @@ jobs:
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << 'VERIFY_SCRIPT'
-            DEPLOY_PATH="$DEPLOY_PATH"
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'VERIFY_SCRIPT'
+            DEPLOY_PATH="$1"
             cd "$DEPLOY_PATH"
             
             if [ ! -f .env ]; then
@@ -944,10 +944,10 @@ jobs:
               echo "❌ ERROR: DB_PASSWORD is empty"
               exit 1
             else
-              DB_PASS=\$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2-)
-              DB_PASS_LEN=\${#DB_PASS}
-              echo "✅ DB_PASSWORD is set (length: \$DB_PASS_LEN)"
-              echo "   Preview: \${DB_PASS:0:10}..."
+              DB_PASS=$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2-)
+              DB_PASS_LEN=${#DB_PASS}
+              echo "✅ DB_PASSWORD is set (length: $DB_PASS_LEN)"
+              echo "   Preview: ${DB_PASS:0:10}..."
             fi
             
             echo ""
@@ -959,10 +959,10 @@ jobs:
               echo "❌ ERROR: JWT_SECRET is empty"
               exit 1
             else
-              JWT_SEC=\$(grep '^JWT_SECRET=' .env | cut -d'=' -f2-)
-              JWT_SEC_LEN=\${#JWT_SEC}
-              echo "✅ JWT_SECRET is set (length: \$JWT_SEC_LEN)"
-              echo "   Preview: \${JWT_SEC:0:10}..."
+              JWT_SEC=$(grep '^JWT_SECRET=' .env | cut -d'=' -f2-)
+              JWT_SEC_LEN=${#JWT_SEC}
+              echo "✅ JWT_SECRET is set (length: $JWT_SEC_LEN)"
+              echo "   Preview: ${JWT_SEC:0:10}..."
             fi
             
             echo ""
