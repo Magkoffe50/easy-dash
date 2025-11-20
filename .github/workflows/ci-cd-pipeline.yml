@@ -778,19 +778,19 @@ jobs:
           JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
         run: |
           echo "📁 Setting up deployment directory: $DEPLOY_PATH"
+          # Prepare secrets for remote script (escape for safe passing)
+          DB_PASSWORD_ESC=$(printf '%q' "$DB_PASSWORD")
+          JWT_SECRET_ESC=$(printf '%q' "$JWT_SECRET")
+          
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" \
-            DB_PASSWORD_ENV="$DB_PASSWORD" \
-            JWT_SECRET_ENV="$JWT_SECRET" \
-            DEPLOY_PATH_VAR="$DEPLOY_PATH" \
-            bash << 'REMOTE_SCRIPT'
+            "$SERVER_USER@$SERVER_HOST" "bash -s" << REMOTE_SCRIPT
             set -e
-            DEPLOY_PATH="${DEPLOY_PATH_VAR}"
-            DB_PASSWORD_ENV="${DB_PASSWORD_ENV}"
-            JWT_SECRET_ENV="${JWT_SECRET_ENV}"
+            DEPLOY_PATH="$DEPLOY_PATH"
+            DB_PASSWORD_ENV=$DB_PASSWORD_ESC
+            JWT_SECRET_ENV=$JWT_SECRET_ESC
             
             echo "Creating directory: $DEPLOY_PATH"
             mkdir -p "$DEPLOY_PATH"
