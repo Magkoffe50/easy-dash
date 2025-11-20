@@ -614,8 +614,6 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          echo "🔑 Setting up SSH key..."
-          
           if [ -z "${{ secrets.PRODUCTION_SSH_KEY }}" ]; then
             echo "❌ PRODUCTION_SSH_KEY secret is empty"
             exit 1
@@ -635,80 +633,33 @@ jobs:
           fi
           
           mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
-          
           chmod 600 ~/.ssh/deploy_key
-          
-          echo "🔍 Validating SSH key format..."
           
           FIRST_LINE=$(head -n 1 ~/.ssh/deploy_key)
           KEY_TYPE=$(echo "$FIRST_LINE" | cut -d' ' -f1)
-          KEY_LENGTH=$(wc -l < ~/.ssh/deploy_key)
           
           if [ "$KEY_TYPE" = "ssh-rsa" ] || [ "$KEY_TYPE" = "ssh-ed25519" ] || [ "$KEY_TYPE" = "ssh-dss" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp256" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp384" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp521" ]; then
             echo "❌ ERROR: You've provided a PUBLIC KEY instead of a PRIVATE KEY"
-            echo ""
-            echo "The key you pasted starts with: $KEY_TYPE"
-            echo "This is a PUBLIC key format (from a .pub file)"
-            echo ""
-            echo "🔧 How to fix:"
-            echo "1. You need the PRIVATE key file (NOT the .pub file)"
-            echo "2. Private keys start with: -----BEGIN OPENSSH PRIVATE KEY-----"
-            echo "   or: -----BEGIN RSA PRIVATE KEY-----"
-            echo "3. If you don't have the private key, generate a new key pair:"
-            echo "   ssh-keygen -t ed25519 -C 'github-deploy' -f ~/.ssh/github_deploy"
-            echo "4. Copy the contents of ~/.ssh/github_deploy (NOT github_deploy.pub)"
-            echo "5. Add the PUBLIC key to your server:"
-            echo "   ssh-copy-id -i ~/.ssh/github_deploy.pub user@your-server"
-            echo ""
             exit 1
           fi
           
           if [ "$KEY_TYPE" != "-----BEGIN" ]; then
             echo "❌ Invalid SSH key: Key does not start with '-----BEGIN'"
-            echo "First line: $(echo "$FIRST_LINE" | cut -c1-50)..."
-            echo ""
-            echo "⚠️  Expected format:"
-            echo "   -----BEGIN OPENSSH PRIVATE KEY-----"
-            echo "   or"
-            echo "   -----BEGIN RSA PRIVATE KEY-----"
-            echo ""
-            echo "Make sure you're using the PRIVATE key file, not the public key (.pub file)"
-            exit 1
-          fi
-          
-          if [ "$KEY_LENGTH" -lt 10 ]; then
-            echo "❌ Invalid SSH key: Key appears to be too short ($KEY_LENGTH lines)"
             exit 1
           fi
           
           if ! grep -q "PRIVATE KEY" ~/.ssh/deploy_key; then
             echo "❌ Invalid SSH key: Key does not appear to be a private key"
-            echo "⚠️  Make sure you're using the PRIVATE key, not the public key (.pub file)"
             exit 1
           fi
           
           if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
             echo "❌ Invalid SSH key: Key validation failed"
-            echo "⚠️  Common issues:"
-            echo "   - Key has incorrect line endings (should be LF, not CRLF)"
-            echo "   - Key is missing final newline"
-            echo "   - Key has extra whitespace"
-            echo "   - Key is corrupted"
             exit 1
           fi
           
-          echo "✅ SSH key format is valid"
-          
-          echo "📋 Key info (for debugging):"
-          echo "   Key type: $(grep -o 'BEGIN [A-Z ]*PRIVATE KEY' ~/.ssh/deploy_key | head -1 || echo 'unknown')"
-          echo "   Key length: $(wc -l < ~/.ssh/deploy_key) lines"
-          echo "   File size: $(wc -c < ~/.ssh/deploy_key) bytes"
-          
-          echo "🔐 Adding server to known_hosts..."
           ssh-keyscan -H ${{ secrets.PRODUCTION_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           chmod 644 ~/.ssh/known_hosts
-          
-          echo "✅ SSH setup complete"
 
       - name: Ensure Docker is installed on server
         env:
@@ -717,25 +668,17 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
         run: |
-          echo "🔍 Testing SSH connection..."
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             -o BatchMode=yes \
             -o ConnectTimeout=10 \
-            "$SERVER_USER@$SERVER_HOST" \
-            "echo '✅ SSH connection successful'" || {
+            "$SERVER_USER@$SERVER_HOST" "true" || {
             echo "❌ SSH connection failed"
-            echo "Please verify:"
-            echo "  - PRODUCTION_SSH_KEY secret contains the full private key"
-            echo "  - PRODUCTION_SERVER_HOST is correct"
-            echo "  - PRODUCTION_SERVER_USER is correct"
-            echo "  - Public key is added to server's ~/.ssh/authorized_keys"
             exit 1
           }
           
-          echo "📦 Checking Docker installation..."
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
@@ -744,27 +687,17 @@ jobs:
             set -e
             
             if ! command -v docker &> /dev/null; then
-              echo "📦 Installing Docker..."
               curl -fsSL https://get.docker.com -o get-docker.sh
               sh get-docker.sh
               rm get-docker.sh
               systemctl enable docker
               systemctl start docker
-            else
-              echo "✅ Docker already installed"
             fi
 
             if ! command -v docker-compose &> /dev/null; then
-              echo "📦 Installing Docker Compose..."
               curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               chmod +x /usr/local/bin/docker-compose
-            else
-              echo "✅ Docker Compose already installed"
             fi
-
-            echo "📋 Docker versions:"
-            docker --version
-            docker-compose --version
           REMOTE_SCRIPT
 
       - name: Setup deployment directory
@@ -774,200 +707,34 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
-          DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
         run: |
-          echo "📁 Setting up deployment directory: $DEPLOY_PATH"
-          
-          if [ -z "$DB_PASSWORD" ]; then
-            echo "❌ ERROR: PRODUCTION_DB_PASSWORD secret is not set!"
-            exit 1
-          else
-            echo "✅ PRODUCTION_DB_PASSWORD secret is set (length: ${#DB_PASSWORD})"
-          fi
-          
-          if [ -z "$JWT_SECRET" ]; then
-            echo "❌ ERROR: PRODUCTION_JWT_SECRET secret is not set!"
-            exit 1
-          else
-            echo "✅ PRODUCTION_JWT_SECRET secret is set (length: ${#JWT_SECRET})"
-          fi
-          
-          DB_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 | tr -d '\n\r')
-          JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 | tr -d '\n\r')
-          
-          echo "🔍 Debug: DB_PASSWORD_B64 encoded (length: ${#DB_PASSWORD_B64})"
-          echo "🔍 Debug: JWT_SECRET_B64 encoded (length: ${#JWT_SECRET_B64})"
-          
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" "$DB_PASSWORD_B64" "$JWT_SECRET_B64" << 'REMOTE_SCRIPT'
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'REMOTE_SCRIPT'
             set -e
             DEPLOY_PATH="$1"
-            DB_PASSWORD_B64="$2"
-            JWT_SECRET_B64="$3"
-            
-            echo "🔍 Debug: DEPLOY_PATH=$DEPLOY_PATH"
-            echo "🔍 Debug: DB_PASSWORD_B64 received (length: ${#DB_PASSWORD_B64})"
-            echo "🔍 Debug: JWT_SECRET_B64 received (length: ${#JWT_SECRET_B64})"
-            
-            if [ -z "$DB_PASSWORD_B64" ]; then
-              echo "❌ ERROR: DB_PASSWORD_B64 is empty"
-              exit 1
-            fi
-            
-            if [ -z "$JWT_SECRET_B64" ]; then
-              echo "❌ ERROR: JWT_SECRET_B64 is empty"
-              exit 1
-            fi
-            
-            DB_PASSWORD_ENV=$(printf '%s' "$DB_PASSWORD_B64" | base64 -d 2>&1)
-            DECODE_STATUS=$?
-            if [ $DECODE_STATUS -ne 0 ]; then
-              echo "❌ ERROR: Failed to decode DB_PASSWORD (status: $DECODE_STATUS)"
-              echo "   Error output: $DB_PASSWORD_ENV"
-              echo "   Base64 string preview: ${DB_PASSWORD_B64:0:30}..."
-              exit 1
-            fi
-            
-            JWT_SECRET_ENV=$(printf '%s' "$JWT_SECRET_B64" | base64 -d 2>&1)
-            DECODE_STATUS=$?
-            if [ $DECODE_STATUS -ne 0 ]; then
-              echo "❌ ERROR: Failed to decode JWT_SECRET (status: $DECODE_STATUS)"
-              echo "   Error output: $JWT_SECRET_ENV"
-              echo "   Base64 string preview: ${JWT_SECRET_B64:0:30}..."
-              exit 1
-            fi
-            
-            if [ -z "$DB_PASSWORD_ENV" ]; then
-              echo "❌ ERROR: DB_PASSWORD decoded but is empty"
-              exit 1
-            fi
-            
-            if [ -z "$JWT_SECRET_ENV" ]; then
-              echo "❌ ERROR: JWT_SECRET decoded but is empty"
-              exit 1
-            fi
-            
-            echo "✅ DB_PASSWORD decoded successfully (length: ${#DB_PASSWORD_ENV})"
-            echo "✅ JWT_SECRET decoded successfully (length: ${#JWT_SECRET_ENV})"
-            
-            echo "Creating directory: $DEPLOY_PATH"
             mkdir -p "$DEPLOY_PATH"
             cd "$DEPLOY_PATH"
-            echo "Current directory: $(pwd)"
             
             if [ ! -f .env ]; then
-              echo "⚠️  .env file not found. Creating from GitHub secrets..."
-              
-              {
-                echo "DB_DATABASE=easy_dash_db"
-                echo "DB_USERNAME=postgres"
-                printf "DB_PASSWORD=%s\n" "$DB_PASSWORD_ENV"
-                printf "JWT_SECRET=%s\n" "$JWT_SECRET_ENV"
-                echo "JWT_EXPIRES_IN=24h"
-                echo "FRONTEND_URL=https://easy-dash.dev"
-                echo "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api"
-                echo "R2_ACCOUNT_ID="
-                echo "R2_ACCESS_KEY_ID="
-                echo "R2_SECRET_ACCESS_KEY="
-                echo "R2_BUCKET_NAME="
-                echo "R2_PUBLIC_URL="
-              } > .env
-              
-              echo "✅ .env file created from secrets"
-            else
-              echo "✅ .env file already exists"
-              echo "📝 Updating DB_PASSWORD and JWT_SECRET from secrets..."
-              
-              if grep -q "^DB_PASSWORD=" .env; then
-                sed -i "/^DB_PASSWORD=/d" .env
-              fi
-              printf "DB_PASSWORD=%s\n" "$DB_PASSWORD_ENV" >> .env
-              
-              if grep -q "^JWT_SECRET=" .env; then
-                sed -i "/^JWT_SECRET=/d" .env
-              fi
-              printf "JWT_SECRET=%s\n" "$JWT_SECRET_ENV" >> .env
-              
-              echo "✅ DB_PASSWORD and JWT_SECRET updated"
+              printf '%s\n' \
+                "DB_DATABASE=easy_dash_db" \
+                "DB_USERNAME=postgres" \
+                "DB_PASSWORD=YOUR_DB_PASSWORD_HERE" \
+                "JWT_SECRET=YOUR_JWT_SECRET_HERE" \
+                "JWT_EXPIRES_IN=24h" \
+                "FRONTEND_URL=https://easy-dash.dev" \
+                "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api" \
+                "R2_ACCOUNT_ID=" \
+                "R2_ACCESS_KEY_ID=" \
+                "R2_SECRET_ACCESS_KEY=" \
+                "R2_BUCKET_NAME=" \
+                "R2_PUBLIC_URL=" > .env
+              chmod 600 .env
             fi
-            
-            echo "🔍 Verifying .env file contents:"
-            if grep -q "^DB_PASSWORD=CHANGE_ME" .env || grep -q "^DB_PASSWORD=$" .env; then
-              echo "❌ ERROR: DB_PASSWORD is still set to CHANGE_ME or empty!"
-              exit 1
-            fi
-            if grep -q "^JWT_SECRET=CHANGE_ME" .env || grep -q "^JWT_SECRET=$" .env; then
-              echo "❌ ERROR: JWT_SECRET is still set to CHANGE_ME or empty!"
-              exit 1
-            fi
-            DB_PASSWORD_LEN=$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | wc -c)
-            JWT_SECRET_LEN=$(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | wc -c)
-            echo "✅ DB_PASSWORD is set (length: $((DB_PASSWORD_LEN - 1)))"
-            echo "✅ JWT_SECRET is set (length: $((JWT_SECRET_LEN - 1)))"
-            echo "DB_PASSWORD preview: $(grep '^DB_PASSWORD=' .env | cut -d'=' -f2 | head -c 10)..."
-            echo "JWT_SECRET preview: $(grep '^JWT_SECRET=' .env | cut -d'=' -f2 | head -c 10)..."
           REMOTE_SCRIPT
-
-      - name: Verify .env file on server
-        env:
-          SSH_KEY: ~/.ssh/deploy_key
-          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
-          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
-        run: |
-          echo "🔍 Verifying .env file on server..."
-          ssh -i "$SSH_KEY" \
-            -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'VERIFY_SCRIPT'
-            DEPLOY_PATH="$1"
-            cd "$DEPLOY_PATH"
-            
-            if [ ! -f .env ]; then
-              echo "❌ ERROR: .env file not found!"
-              exit 1
-            fi
-            
-            echo "📄 .env file exists"
-            echo ""
-            echo "Checking DB_PASSWORD:"
-            if grep -q "^DB_PASSWORD=CHANGE_ME" .env; then
-              echo "❌ ERROR: DB_PASSWORD is still CHANGE_ME"
-              exit 1
-            elif grep -q "^DB_PASSWORD=$" .env; then
-              echo "❌ ERROR: DB_PASSWORD is empty"
-              exit 1
-            else
-              DB_PASS=$(grep '^DB_PASSWORD=' .env | cut -d'=' -f2-)
-              DB_PASS_LEN=${#DB_PASS}
-              echo "✅ DB_PASSWORD is set (length: $DB_PASS_LEN)"
-              echo "   Preview: ${DB_PASS:0:10}..."
-            fi
-            
-            echo ""
-            echo "Checking JWT_SECRET:"
-            if grep -q "^JWT_SECRET=CHANGE_ME" .env; then
-              echo "❌ ERROR: JWT_SECRET is still CHANGE_ME"
-              exit 1
-            elif grep -q "^JWT_SECRET=$" .env; then
-              echo "❌ ERROR: JWT_SECRET is empty"
-              exit 1
-            else
-              JWT_SEC=$(grep '^JWT_SECRET=' .env | cut -d'=' -f2-)
-              JWT_SEC_LEN=${#JWT_SEC}
-              echo "✅ JWT_SECRET is set (length: $JWT_SEC_LEN)"
-              echo "   Preview: ${JWT_SEC:0:10}..."
-            fi
-            
-            echo ""
-            echo "✅ All secrets are properly configured!"
-          VERIFY_SCRIPT
 
       - name: Copy deployment files
         env:
@@ -977,46 +744,17 @@ jobs:
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
         run: |
-          echo "📋 Verifying docker-compose.prod.yml exists locally..."
           if [ ! -f deploy/docker-compose.prod.yml ]; then
             echo "❌ deploy/docker-compose.prod.yml not found!"
             exit 1
           fi
           
-          echo "📤 Copying docker-compose.prod.yml to server..."
           scp -i "$SSH_KEY" \
             -P "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             deploy/docker-compose.prod.yml \
-            "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/" || {
-            echo "❌ Failed to copy docker-compose.prod.yml"
-            exit 1
-          }
-          
-          echo "✅ File copied successfully"
-          
-          echo "🔍 Verifying files on server..."
-          ssh -i "$SSH_KEY" \
-            -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << 'VERIFY_SCRIPT'
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
-            echo "Checking directory: $DEPLOY_PATH"
-            ls -la "$DEPLOY_PATH" || echo "Directory listing failed"
-            echo ""
-            if [ -f "$DEPLOY_PATH/docker-compose.prod.yml" ]; then
-              echo "✅ docker-compose.prod.yml found"
-            else
-              echo "❌ docker-compose.prod.yml NOT found!"
-            fi
-            if [ -f "$DEPLOY_PATH/.env" ]; then
-              echo "✅ .env file found"
-            else
-              echo "⚠️  .env file not found"
-            fi
-          VERIFY_SCRIPT
+            "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
 
       - name: Configure Nginx
         env:
@@ -1037,31 +775,12 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
-            echo "📝 Setting up Nginx configuration..."
-            
-            if [ -f /etc/nginx/sites-available/default ]; then
-              echo "🔄 Disabling default nginx site..."
-              rm -f /etc/nginx/sites-enabled/default
-            fi
-            
-            echo "📄 Installing easy-dash.dev configuration..."
+            set -e
+            rm -f /etc/nginx/sites-enabled/default
             mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
             ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/easy-dash.dev
-            
-            echo "🔍 Testing nginx configuration..."
-            if nginx -t; then
-              echo "✅ Nginx configuration is valid"
-              echo "🔄 Reloading nginx..."
-              systemctl reload nginx || systemctl restart nginx
-              echo "✅ Nginx reloaded successfully"
-            else
-              echo "❌ Nginx configuration test failed!"
-              echo "⚠️  Please check the configuration manually"
-              exit 1
-            fi
-            
-            echo "📋 Active nginx sites:"
-            ls -la /etc/nginx/sites-enabled/ || echo "No sites enabled"
+            nginx -t
+            systemctl reload nginx || systemctl restart nginx
           REMOTE_SCRIPT
 
       - name: Login to GitHub Container Registry
@@ -1102,32 +821,19 @@ jobs:
             cd "$DEPLOY_PATH"
             
             if [ -f .env ]; then
-              echo "📄 Loading environment variables from .env file..."
               set -a
               source .env
               set +a
-            else
-              echo "⚠️  .env file not found, using defaults"
             fi
             
-            echo "📥 Pulling Docker images..."
-            docker pull "$BACKEND_IMAGE" || exit 1
-            docker pull "$FRONTEND_IMAGE" || exit 1
-            
-            echo "🔄 Setting image environment variables..."
             export BACKEND_IMAGE="$BACKEND_IMAGE"
             export FRONTEND_IMAGE="$FRONTEND_IMAGE"
             
-            echo "🛑 Stopping existing containers..."
+            docker pull "$BACKEND_IMAGE"
+            docker pull "$FRONTEND_IMAGE"
             docker-compose -f docker-compose.prod.yml down || true
-            
-            echo "🚀 Starting containers..."
             docker-compose -f docker-compose.prod.yml up -d
-            
-            echo "⏳ Waiting for services to be healthy..."
             sleep 15
-            
-            echo "🔍 Checking container status..."
             docker-compose -f docker-compose.prod.yml ps
           REMOTE_SCRIPT
 
@@ -1138,8 +844,6 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
@@ -1147,41 +851,12 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
-            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
-            FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}"
-            
             cd "$DEPLOY_PATH"
-            
-            if [ -f .env ]; then
-              echo "📄 Loading environment variables from .env file..."
-              set -a
-              source .env
-              set +a
-            fi
-            
-            export BACKEND_IMAGE="$BACKEND_IMAGE"
-            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
-            
-            echo "📋 Container status:"
             docker-compose -f docker-compose.prod.yml ps
-            echo ""
-            echo "📋 Container logs (last 30 lines):"
             docker-compose -f docker-compose.prod.yml logs --tail=30
-            echo ""
-            echo "🔍 Health check:"
-            docker-compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
           REMOTE_SCRIPT
 
       - name: Deployment info
         id: deploy-info
         run: |
           echo "url=https://easy-dash.dev" >> $GITHUB_OUTPUT
-          echo "✅ Production deployment completed!"
-
-      - name: Notify deployment
-        if: success()
-        run: |
-          echo "✅ Successfully deployed to PRODUCTION on DigitalOcean!"
-          echo "🌐 Production URL: https://easy-dash.dev"
-          echo "📱 Frontend: https://easy-dash.dev"
-          echo "🔧 Backend API: https://easy-dash.dev/api"
