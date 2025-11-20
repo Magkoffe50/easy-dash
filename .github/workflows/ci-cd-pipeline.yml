@@ -778,6 +778,19 @@ jobs:
           JWT_SECRET: ${{ secrets.PRODUCTION_JWT_SECRET }}
         run: |
           echo "📁 Setting up deployment directory: $DEPLOY_PATH"
+          # Check if secrets are set (for debugging)
+          if [ -z "$DB_PASSWORD" ]; then
+            echo "⚠️  WARNING: PRODUCTION_DB_PASSWORD secret is not set!"
+          else
+            echo "✅ PRODUCTION_DB_PASSWORD secret is set (length: ${#DB_PASSWORD})"
+          fi
+          
+          if [ -z "$JWT_SECRET" ]; then
+            echo "⚠️  WARNING: PRODUCTION_JWT_SECRET secret is not set!"
+          else
+            echo "✅ PRODUCTION_JWT_SECRET secret is set (length: ${#JWT_SECRET})"
+          fi
+          
           # Prepare secrets for remote script (escape for safe passing)
           DB_PASSWORD_ESC=$(printf '%q' "$DB_PASSWORD")
           JWT_SECRET_ESC=$(printf '%q' "$JWT_SECRET")
@@ -786,11 +799,14 @@ jobs:
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" "bash -s" << REMOTE_SCRIPT
+            "$SERVER_USER@$SERVER_HOST" bash << REMOTE_SCRIPT
             set -e
             DEPLOY_PATH="$DEPLOY_PATH"
             DB_PASSWORD_ENV=$DB_PASSWORD_ESC
             JWT_SECRET_ENV=$JWT_SECRET_ESC
+            
+            echo "🔍 Debug: DB_PASSWORD_ENV length: \${#DB_PASSWORD_ENV}"
+            echo "🔍 Debug: JWT_SECRET_ENV length: \${#JWT_SECRET_ENV}"
             
             echo "Creating directory: $DEPLOY_PATH"
             mkdir -p "$DEPLOY_PATH"
