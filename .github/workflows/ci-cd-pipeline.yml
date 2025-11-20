@@ -744,8 +744,8 @@ jobs:
                   echo "Successfully wrote and removed test variable from .env"
                 else
                   echo "Failed to write test variable to .env"
-                  exit 1
-                fi
+            exit 1
+          fi
               else
                 echo ".env file is NOT writable"
                 exit 1
@@ -785,11 +785,11 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             set -e
-            rm -f /etc/nginx/sites-enabled/default
+              rm -f /etc/nginx/sites-enabled/default
             mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
             ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/easy-dash.dev
             nginx -t
-            systemctl reload nginx || systemctl restart nginx
+              systemctl reload nginx || systemctl restart nginx
           REMOTE_SCRIPT
 
       - name: Login to GitHub Container Registry
@@ -829,25 +829,6 @@ jobs:
             
             cd "$DEPLOY_PATH"
             
-            if [ -f .env ]; then
-              set -a
-              source .env
-              set +a
-              
-              if grep -q "^BACKEND_IMAGE=" .env 2>/dev/null; then
-                sed -i "/^BACKEND_IMAGE=/d" .env
-              fi
-              if grep -q "^FRONTEND_IMAGE=" .env 2>/dev/null; then
-                sed -i "/^FRONTEND_IMAGE=/d" .env
-              fi
-              
-              echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> .env
-              echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> .env
-            fi
-            
-            export BACKEND_IMAGE="$BACKEND_IMAGE"
-            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
-            
             docker pull "$BACKEND_IMAGE"
             docker pull "$FRONTEND_IMAGE"
             
@@ -862,9 +843,22 @@ jobs:
             done
             
             if [ -f .env ]; then
+              if grep -q "^BACKEND_IMAGE=" .env 2>/dev/null; then
+                sed -i "/^BACKEND_IMAGE=/d" .env
+              fi
+              if grep -q "^FRONTEND_IMAGE=" .env 2>/dev/null; then
+                sed -i "/^FRONTEND_IMAGE=/d" .env
+              fi
+              
+              echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> .env
+              echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> .env
+              
               set -a
               source .env
               set +a
+            else
+              echo "❌ .env file not found!"
+              exit 1
             fi
             
             export BACKEND_IMAGE="$BACKEND_IMAGE"
