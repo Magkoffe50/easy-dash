@@ -856,6 +856,21 @@ jobs:
               set -a
               source .env
               set +a
+              
+              if [ -z "$DB_PASSWORD" ]; then
+                echo "❌ DB_PASSWORD is not set in .env file!"
+                exit 1
+              fi
+              
+              if [ -z "$DB_USERNAME" ]; then
+                echo "❌ DB_USERNAME is not set in .env file!"
+                exit 1
+              fi
+              
+              if [ -z "$DB_DATABASE" ]; then
+                echo "❌ DB_DATABASE is not set in .env file!"
+                exit 1
+              fi
             else
               echo "❌ .env file not found!"
               exit 1
@@ -863,8 +878,38 @@ jobs:
             
             export BACKEND_IMAGE="$BACKEND_IMAGE"
             export FRONTEND_IMAGE="$FRONTEND_IMAGE"
+            export DB_PASSWORD="$DB_PASSWORD"
+            export DB_USERNAME="${DB_USERNAME:-postgres}"
+            export DB_DATABASE="${DB_DATABASE:-easy_dash_db}"
             
             docker-compose -f docker-compose.prod.yml up -d
+            
+            sleep 10
+            
+            echo "Waiting for postgres to be ready..."
+            for i in {1..30}; do
+              if docker exec easy-dash-postgres-prod pg_isready -U "$DB_USERNAME" > /dev/null 2>&1; then
+                echo "Postgres is ready"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Postgres failed to become ready"
+                docker logs easy-dash-postgres-prod --tail=50
+                exit 1
+              fi
+              sleep 1
+            done
+            
+            echo "Testing database connection with password from .env..."
+            if docker exec -e PGPASSWORD="$DB_PASSWORD" easy-dash-postgres-prod psql -U "$DB_USERNAME" -d "$DB_DATABASE" -c "SELECT 1;" > /dev/null 2>&1; then
+              echo "✅ Database connection successful with .env password"
+            else
+              echo "❌ Database connection failed with .env password"
+              echo "This means DB_PASSWORD in .env doesn't match what postgres was initialized with"
+              echo "Postgres container environment:"
+              docker inspect easy-dash-postgres-prod | grep -A 5 "POSTGRES_PASSWORD" || echo "No POSTGRES_PASSWORD in container env"
+              exit 1
+            fi
             
             sleep 5
             
