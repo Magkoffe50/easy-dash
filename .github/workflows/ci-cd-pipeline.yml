@@ -699,6 +699,72 @@ jobs:
             deploy/docker-compose.prod.yml \
             "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
 
+      - name: Verify SSH connection and .env access
+        env:
+          SSH_KEY: ~/.ssh/deploy_key
+          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
+          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
+        run: |
+          ssh -i "$SSH_KEY" \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'REMOTE_SCRIPT'
+            set -e
+            DEPLOY_PATH="$1"
+            
+            echo "Testing SSH connection and file access..."
+            
+            if [ ! -d "$DEPLOY_PATH" ]; then
+              echo "Directory $DEPLOY_PATH does not exist"
+              exit 1
+            fi
+            
+            if [ ! -w "$DEPLOY_PATH" ]; then
+              echo "Directory $DEPLOY_PATH is not writable"
+              exit 1
+            fi
+            
+            cd "$DEPLOY_PATH"
+            
+            if [ -f .env ]; then
+              echo ".env file exists"
+              echo "Current .env file structure (keys only):"
+              grep -E "^[A-Z_]+=" .env | cut -d'=' -f1 | sort
+              
+              if [ -w .env ]; then
+                echo ".env file is writable"
+                
+                TEST_VAR="TEST_$(date +%s)"
+                echo "$TEST_VAR=test_value" >> .env
+                if grep -q "^$TEST_VAR=" .env; then
+                  sed -i "/^$TEST_VAR=/d" .env
+                  echo "Successfully wrote and removed test variable from .env"
+                else
+                  echo "Failed to write test variable to .env"
+                  exit 1
+                fi
+              else
+                echo ".env file is NOT writable"
+                exit 1
+              fi
+            else
+              echo ".env file does not exist (will be created on first deployment)"
+              touch .env
+              if [ -w .env ]; then
+                echo "Can create and write to .env file"
+                rm .env
+              else
+                echo "Cannot create .env file"
+                exit 1
+              fi
+            fi
+            
+            echo "SSH connection and .env access verified successfully"
+          REMOTE_SCRIPT
+
       - name: Configure Nginx
         env:
           SSH_KEY: ~/.ssh/deploy_key
@@ -784,7 +850,18 @@ jobs:
             
             docker pull "$BACKEND_IMAGE"
             docker pull "$FRONTEND_IMAGE"
-            docker-compose -f docker-compose.prod.yml down || true
+            
+            docker-compose -f docker-compose.prod.yml stop || true
+            docker-compose -f docker-compose.prod.yml down --remove-orphans || true
+            
+            CONTAINERS=("easy-dash-postgres-prod" "easy-dash-backend-prod" "easy-dash-frontend-prod")
+            for container in "${CONTAINERS[@]}"; do
+              if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+                docker stop "$container" || true
+                docker rm "$container" || true
+              fi
+            done
+            
             docker-compose -f docker-compose.prod.yml up -d
             sleep 15
           REMOTE_SCRIPT
