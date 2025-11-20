@@ -857,8 +857,7 @@ jobs:
             CONTAINERS=("easy-dash-postgres-prod" "easy-dash-backend-prod" "easy-dash-frontend-prod")
             for container in "${CONTAINERS[@]}"; do
               if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-                docker stop "$container" || true
-                docker rm "$container" || true
+                docker rm -f "$container" 2>/dev/null || true
               fi
             done
             
