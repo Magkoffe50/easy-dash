@@ -913,31 +913,55 @@ jobs:
             
             sleep 5
             
-            for i in {1..12}; do
-              RUNNING=$(docker ps --filter "name=easy-dash" --format "{{.Names}}" | wc -l)
-              if [ "$RUNNING" -ge 3 ]; then
-                HEALTHY=$(docker ps --filter "name=easy-dash" --filter "status=running" --format "{{.Names}}" | wc -l)
-                if [ "$HEALTHY" -ge 3 ]; then
-                  echo "All containers are running"
-                  break
+            for i in {1..20}; do
+              RESTARTING=$(docker ps -a --filter "name=easy-dash" --filter "status=restarting" --format "{{.Names}}" | wc -l)
+              if [ "$RESTARTING" -gt 0 ]; then
+                if [ $i -ge 15 ]; then
+                  echo "❌ Containers are restarting (likely crashing). Checking logs..."
+                  docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+                  echo ""
+                  echo "Backend logs:"
+                  docker logs easy-dash-backend-prod --tail=100 2>&1 || true
+                  echo ""
+                  echo "Frontend logs:"
+                  docker logs easy-dash-frontend-prod --tail=50 2>&1 || true
+                  exit 1
                 fi
+                sleep 3
+                continue
               fi
-              if [ $i -eq 12 ]; then
-                echo "Containers failed to start properly. Checking status..."
+              
+              RUNNING=$(docker ps --filter "name=easy-dash" --filter "status=running" --format "{{.Names}}" | wc -l)
+              if [ "$RUNNING" -ge 3 ]; then
+                echo "All containers are running"
+                break
+              fi
+              
+              if [ $i -eq 20 ]; then
+                echo "❌ Containers failed to start properly. Checking status..."
                 docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
                 echo ""
                 echo "Container logs:"
-                docker-compose -f docker-compose.prod.yml logs --tail=50
+                docker-compose -f docker-compose.prod.yml logs --tail=100
                 exit 1
               fi
-              sleep 5
+              sleep 3
             done
             
             sleep 10
             
+            RESTARTING=$(docker ps -a --filter "name=easy-dash" --filter "status=restarting" --format "{{.Names}}" | wc -l)
+            if [ "$RESTARTING" -gt 0 ]; then
+              echo "❌ Some containers are restarting. Checking logs..."
+              docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+              echo ""
+              docker-compose -f docker-compose.prod.yml logs --tail=100
+              exit 1
+            fi
+            
             EXITED=$(docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "{{.Names}}" | wc -l)
             if [ "$EXITED" -gt 0 ]; then
-              echo "Some containers have exited. Checking logs..."
+              echo "❌ Some containers have exited. Checking logs..."
               docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
               echo ""
               docker-compose -f docker-compose.prod.yml logs --tail=100
@@ -969,13 +993,23 @@ jobs:
             docker ps --filter "name=easy-dash" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
             echo ""
             
+            RESTARTING=$(docker ps -a --filter "name=easy-dash" --filter "status=restarting" --format "{{.Names}}" | wc -l)
+            if [ "$RESTARTING" -gt 0 ]; then
+              echo "❌ Some containers are restarting (crashing):"
+              docker ps -a --filter "name=easy-dash" --filter "status=restarting" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+              echo ""
+              echo "Container logs:"
+              docker-compose -f docker-compose.prod.yml logs --tail=100
+              exit 1
+            fi
+            
             EXITED=$(docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "{{.Names}}" | wc -l)
             if [ "$EXITED" -gt 0 ]; then
               echo "❌ Some containers have exited:"
               docker ps -a --filter "name=easy-dash" --filter "status=exited" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
-              echo ""
+            echo ""
               echo "Container logs:"
-              docker-compose -f docker-compose.prod.yml logs --tail=50
+              docker-compose -f docker-compose.prod.yml logs --tail=100
               exit 1
             fi
             
@@ -983,6 +1017,9 @@ jobs:
             if [ "$RUNNING" -lt 3 ]; then
               echo "❌ Not all containers are running (expected 3, found $RUNNING)"
               docker ps -a --filter "name=easy-dash" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+            echo ""
+              echo "Container logs:"
+              docker-compose -f docker-compose.prod.yml logs --tail=100
               exit 1
             fi
             
