@@ -793,39 +793,71 @@ jobs:
             echo "✅ PRODUCTION_JWT_SECRET secret is set (length: ${#JWT_SECRET})"
           fi
           
-          DB_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w 0)
-          JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 -w 0)
+          DB_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 | tr -d '\n\r')
+          JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 | tr -d '\n\r')
+          
+          echo "🔍 Debug: DB_PASSWORD_B64 encoded (length: ${#DB_PASSWORD_B64})"
+          echo "🔍 Debug: JWT_SECRET_B64 encoded (length: ${#JWT_SECRET_B64})"
           
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash -s << REMOTE_SCRIPT
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" "$DB_PASSWORD_B64" "$JWT_SECRET_B64" << 'REMOTE_SCRIPT'
             set -e
-            DEPLOY_PATH="$DEPLOY_PATH"
-            DB_PASSWORD_B64="$DB_PASSWORD_B64"
-            JWT_SECRET_B64="$JWT_SECRET_B64"
+            DEPLOY_PATH="$1"
+            DB_PASSWORD_B64="$2"
+            JWT_SECRET_B64="$3"
             
-            DB_PASSWORD_ENV=$(echo -n "\$DB_PASSWORD_B64" | base64 -d)
-            JWT_SECRET_ENV=$(echo -n "\$JWT_SECRET_B64" | base64 -d)
+            echo "🔍 Debug: DEPLOY_PATH=$DEPLOY_PATH"
+            echo "🔍 Debug: DB_PASSWORD_B64 received (length: ${#DB_PASSWORD_B64})"
+            echo "🔍 Debug: JWT_SECRET_B64 received (length: ${#JWT_SECRET_B64})"
             
-            echo "🔍 Debug: DB_PASSWORD_ENV is set: \$([ -n \"\$DB_PASSWORD_ENV\" ] && echo 'yes' || echo 'no')"
-            echo "🔍 Debug: JWT_SECRET_ENV is set: \$([ -n \"\$JWT_SECRET_ENV\" ] && echo 'yes' || echo 'no')"
-            
-            if [ -z "\$DB_PASSWORD_ENV" ]; then
-              echo "❌ ERROR: Failed to decode DB_PASSWORD"
+            if [ -z "$DB_PASSWORD_B64" ]; then
+              echo "❌ ERROR: DB_PASSWORD_B64 is empty"
               exit 1
             fi
             
-            if [ -z "\$JWT_SECRET_ENV" ]; then
-              echo "❌ ERROR: Failed to decode JWT_SECRET"
+            if [ -z "$JWT_SECRET_B64" ]; then
+              echo "❌ ERROR: JWT_SECRET_B64 is empty"
               exit 1
             fi
             
-            echo "Creating directory: \$DEPLOY_PATH"
-            mkdir -p "\$DEPLOY_PATH"
-            cd "\$DEPLOY_PATH"
-            echo "Current directory: \$(pwd)"
+            DB_PASSWORD_ENV=$(printf '%s' "$DB_PASSWORD_B64" | base64 -d 2>&1)
+            DECODE_STATUS=$?
+            if [ $DECODE_STATUS -ne 0 ]; then
+              echo "❌ ERROR: Failed to decode DB_PASSWORD (status: $DECODE_STATUS)"
+              echo "   Error output: $DB_PASSWORD_ENV"
+              echo "   Base64 string preview: ${DB_PASSWORD_B64:0:30}..."
+              exit 1
+            fi
+            
+            JWT_SECRET_ENV=$(printf '%s' "$JWT_SECRET_B64" | base64 -d 2>&1)
+            DECODE_STATUS=$?
+            if [ $DECODE_STATUS -ne 0 ]; then
+              echo "❌ ERROR: Failed to decode JWT_SECRET (status: $DECODE_STATUS)"
+              echo "   Error output: $JWT_SECRET_ENV"
+              echo "   Base64 string preview: ${JWT_SECRET_B64:0:30}..."
+              exit 1
+            fi
+            
+            if [ -z "$DB_PASSWORD_ENV" ]; then
+              echo "❌ ERROR: DB_PASSWORD decoded but is empty"
+              exit 1
+            fi
+            
+            if [ -z "$JWT_SECRET_ENV" ]; then
+              echo "❌ ERROR: JWT_SECRET decoded but is empty"
+              exit 1
+            fi
+            
+            echo "✅ DB_PASSWORD decoded successfully (length: ${#DB_PASSWORD_ENV})"
+            echo "✅ JWT_SECRET decoded successfully (length: ${#JWT_SECRET_ENV})"
+            
+            echo "Creating directory: $DEPLOY_PATH"
+            mkdir -p "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            echo "Current directory: $(pwd)"
             
             if [ ! -f .env ]; then
               echo "⚠️  .env file not found. Creating from GitHub secrets..."
@@ -833,8 +865,8 @@ jobs:
               {
                 echo "DB_DATABASE=easy_dash_db"
                 echo "DB_USERNAME=postgres"
-                echo "DB_PASSWORD=\${DB_PASSWORD_ENV}"
-                echo "JWT_SECRET=\${JWT_SECRET_ENV}"
+                printf "DB_PASSWORD=%s\n" "$DB_PASSWORD_ENV"
+                printf "JWT_SECRET=%s\n" "$JWT_SECRET_ENV"
                 echo "JWT_EXPIRES_IN=24h"
                 echo "FRONTEND_URL=https://easy-dash.dev"
                 echo "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api"
@@ -843,12 +875,7 @@ jobs:
                 echo "R2_SECRET_ACCESS_KEY="
                 echo "R2_BUCKET_NAME="
                 echo "R2_PUBLIC_URL="
-              } > .env.tmp
-              
-              while IFS= read -r line; do
-                eval echo "\$line"
-              done < .env.tmp > .env
-              rm .env.tmp
+              } > .env
               
               echo "✅ .env file created from secrets"
             else
@@ -858,17 +885,12 @@ jobs:
               if grep -q "^DB_PASSWORD=" .env; then
                 sed -i "/^DB_PASSWORD=/d" .env
               fi
-              echo "DB_PASSWORD=\${DB_PASSWORD_ENV}" >> .env
+              printf "DB_PASSWORD=%s\n" "$DB_PASSWORD_ENV" >> .env
               
               if grep -q "^JWT_SECRET=" .env; then
                 sed -i "/^JWT_SECRET=/d" .env
               fi
-              echo "JWT_SECRET=\${JWT_SECRET_ENV}" >> .env
-              
-              while IFS= read -r line; do
-                eval echo "\$line"
-              done < .env > .env.new
-              mv .env.new .env
+              printf "JWT_SECRET=%s\n" "$JWT_SECRET_ENV" >> .env
               
               echo "✅ DB_PASSWORD and JWT_SECRET updated"
             fi
