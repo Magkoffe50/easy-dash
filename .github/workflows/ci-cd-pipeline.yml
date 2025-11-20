@@ -949,6 +949,76 @@ jobs:
             
             echo "✅ All containers are running"
             docker-compose -f docker-compose.prod.yml ps
+            echo ""
+            
+            echo "Waiting for applications to be ready..."
+            sleep 15
+            
+            echo "Checking backend health..."
+            if curl -f -s http://127.0.0.1:3001/health > /dev/null 2>&1 || curl -f -s http://127.0.0.1:3001/api/health > /dev/null 2>&1 || curl -f -s http://127.0.0.1:3001 > /dev/null 2>&1; then
+              echo "✅ Backend is responding"
+            else
+              echo "❌ Backend is not responding on port 3001"
+              echo "Backend logs:"
+              docker logs easy-dash-backend-prod --tail=50
+              exit 1
+            fi
+            
+            echo "Checking frontend health..."
+            if curl -f -s http://127.0.0.1:3000 > /dev/null 2>&1; then
+              echo "✅ Frontend is responding"
+            else
+              echo "❌ Frontend is not responding on port 3000"
+              echo "Frontend logs:"
+              docker logs easy-dash-frontend-prod --tail=50
+              exit 1
+            fi
+            
+            echo "Checking for application errors in logs..."
+            BACKEND_ERRORS=$(docker logs easy-dash-backend-prod 2>&1 | grep -i "error\|fatal\|exception" | tail -5 || true)
+            if [ -n "$BACKEND_ERRORS" ]; then
+              echo "⚠️ Backend errors detected:"
+              echo "$BACKEND_ERRORS"
+            fi
+            
+            FRONTEND_ERRORS=$(docker logs easy-dash-frontend-prod 2>&1 | grep -i "error\|fatal\|exception" | tail -5 || true)
+            if [ -n "$FRONTEND_ERRORS" ]; then
+              echo "⚠️ Frontend errors detected:"
+              echo "$FRONTEND_ERRORS"
+            fi
+            
+            echo "Checking nginx status..."
+            if systemctl is-active --quiet nginx; then
+              echo "✅ Nginx is running"
+              if nginx -t 2>&1 | grep -q "syntax is ok"; then
+                echo "✅ Nginx configuration is valid"
+              else
+                echo "❌ Nginx configuration has errors"
+                nginx -t
+                exit 1
+              fi
+              
+              if [ -f /etc/letsencrypt/live/easy-dash.dev/fullchain.pem ]; then
+                echo "✅ SSL certificate exists"
+              else
+                echo "⚠️ SSL certificate not found at /etc/letsencrypt/live/easy-dash.dev/fullchain.pem"
+                echo "Nginx will fail to start HTTPS without SSL certificates"
+              fi
+            else
+              echo "⚠️ Nginx is not running"
+              echo "Attempting to start nginx..."
+              systemctl start nginx || true
+              sleep 2
+              if systemctl is-active --quiet nginx; then
+                echo "✅ Nginx started successfully"
+              else
+                echo "❌ Failed to start nginx"
+                systemctl status nginx --no-pager -l || true
+                exit 1
+              fi
+            fi
+            
+            echo "✅ Health checks passed"
           REMOTE_SCRIPT
 
       - name: Deployment info
