@@ -802,11 +802,11 @@ jobs:
             "$SERVER_USER@$SERVER_HOST" bash << REMOTE_SCRIPT
             set -e
             DEPLOY_PATH="$DEPLOY_PATH"
-            DB_PASSWORD_ENV=$DB_PASSWORD_ESC
-            JWT_SECRET_ENV=$JWT_SECRET_ESC
+            eval "DB_PASSWORD_ENV=$DB_PASSWORD_ESC"
+            eval "JWT_SECRET_ENV=$JWT_SECRET_ESC"
             
-            echo "🔍 Debug: DB_PASSWORD_ENV length: \${#DB_PASSWORD_ENV}"
-            echo "🔍 Debug: JWT_SECRET_ENV length: \${#JWT_SECRET_ENV}"
+            echo "🔍 Debug: DB_PASSWORD_ENV is set: \$([ -n \"\$DB_PASSWORD_ENV\" ] && echo 'yes' || echo 'no')"
+            echo "🔍 Debug: JWT_SECRET_ENV is set: \$([ -n \"\$JWT_SECRET_ENV\" ] && echo 'yes' || echo 'no')"
             
             echo "Creating directory: $DEPLOY_PATH"
             mkdir -p "$DEPLOY_PATH"
