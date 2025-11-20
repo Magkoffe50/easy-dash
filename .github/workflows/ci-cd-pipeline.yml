@@ -238,13 +238,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Output image tags
-        run: |
-          echo "✅ Docker images built and pushed successfully!"
-          echo "Backend: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}"
-          echo "Frontend (staging): ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-staging"
-          echo "Frontend (production): ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-production"
-
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -615,7 +608,6 @@ jobs:
           chmod 700 ~/.ssh
           
           if [ -z "${{ secrets.PRODUCTION_SSH_KEY }}" ]; then
-            echo "❌ PRODUCTION_SSH_KEY secret is empty"
             exit 1
           fi
           
@@ -624,7 +616,6 @@ jobs:
             sed 's/[[:space:]]*$//' > ~/.ssh/deploy_key.tmp
           
           if [ ! -s ~/.ssh/deploy_key.tmp ]; then
-            echo "❌ SSH key is empty after processing"
             exit 1
           fi
           
@@ -639,22 +630,18 @@ jobs:
           KEY_TYPE=$(echo "$FIRST_LINE" | cut -d' ' -f1)
           
           if [ "$KEY_TYPE" = "ssh-rsa" ] || [ "$KEY_TYPE" = "ssh-ed25519" ] || [ "$KEY_TYPE" = "ssh-dss" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp256" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp384" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp521" ]; then
-            echo "❌ ERROR: You've provided a PUBLIC KEY instead of a PRIVATE KEY"
             exit 1
           fi
           
           if [ "$KEY_TYPE" != "-----BEGIN" ]; then
-            echo "❌ Invalid SSH key: Key does not start with '-----BEGIN'"
             exit 1
           fi
           
           if ! grep -q "PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ Invalid SSH key: Key does not appear to be a private key"
             exit 1
           fi
           
           if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
-            echo "❌ Invalid SSH key: Key validation failed"
             exit 1
           fi
           
@@ -674,10 +661,7 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             -o BatchMode=yes \
             -o ConnectTimeout=10 \
-            "$SERVER_USER@$SERVER_HOST" "true" || {
-            echo "❌ SSH connection failed"
-            exit 1
-          }
+            "$SERVER_USER@$SERVER_HOST" "true" || exit 1
           
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
@@ -700,42 +684,6 @@ jobs:
             fi
           REMOTE_SCRIPT
 
-      - name: Setup deployment directory
-        env:
-          SSH_KEY: ~/.ssh/deploy_key
-          SERVER_HOST: ${{ secrets.PRODUCTION_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
-          SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
-          DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
-        run: |
-          ssh -i "$SSH_KEY" \
-            -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'REMOTE_SCRIPT'
-            set -e
-            DEPLOY_PATH="$1"
-            mkdir -p "$DEPLOY_PATH"
-            cd "$DEPLOY_PATH"
-            
-            if [ ! -f .env ]; then
-              printf '%s\n' \
-                "DB_DATABASE=easy_dash_db" \
-                "DB_USERNAME=postgres" \
-                "DB_PASSWORD=YOUR_DB_PASSWORD_HERE" \
-                "JWT_SECRET=YOUR_JWT_SECRET_HERE" \
-                "JWT_EXPIRES_IN=24h" \
-                "FRONTEND_URL=https://easy-dash.dev" \
-                "NEXT_PUBLIC_API_URL=https://easy-dash.dev/api" \
-                "R2_ACCOUNT_ID=" \
-                "R2_ACCESS_KEY_ID=" \
-                "R2_SECRET_ACCESS_KEY=" \
-                "R2_BUCKET_NAME=" \
-                "R2_PUBLIC_URL=" > .env
-              chmod 600 .env
-            fi
-          REMOTE_SCRIPT
-
       - name: Copy deployment files
         env:
           SSH_KEY: ~/.ssh/deploy_key
@@ -744,11 +692,6 @@ jobs:
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
         run: |
-          if [ ! -f deploy/docker-compose.prod.yml ]; then
-            echo "❌ deploy/docker-compose.prod.yml not found!"
-            exit 1
-          fi
-          
           scp -i "$SSH_KEY" \
             -P "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
@@ -824,28 +767,26 @@ jobs:
               set -a
               source .env
               set +a
+              
+              if grep -q "^BACKEND_IMAGE=" .env 2>/dev/null; then
+                sed -i "/^BACKEND_IMAGE=/d" .env
+              fi
+              if grep -q "^FRONTEND_IMAGE=" .env 2>/dev/null; then
+                sed -i "/^FRONTEND_IMAGE=/d" .env
+              fi
+              
+              echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> .env
+              echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> .env
             fi
-            
-            if grep -q "^BACKEND_IMAGE=" .env 2>/dev/null; then
-              sed -i "/^BACKEND_IMAGE=/d" .env
-            fi
-            if grep -q "^FRONTEND_IMAGE=" .env 2>/dev/null; then
-              sed -i "/^FRONTEND_IMAGE=/d" .env
-            fi
-            
-            echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> .env
-            echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> .env
             
             export BACKEND_IMAGE="$BACKEND_IMAGE"
             export FRONTEND_IMAGE="$FRONTEND_IMAGE"
             
             docker pull "$BACKEND_IMAGE"
             docker pull "$FRONTEND_IMAGE"
-            
             docker-compose -f docker-compose.prod.yml down || true
             docker-compose -f docker-compose.prod.yml up -d
             sleep 15
-            docker-compose -f docker-compose.prod.yml ps
           REMOTE_SCRIPT
 
       - name: Verify deployment
@@ -855,23 +796,15 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" "$BACKEND_IMAGE" "$FRONTEND_IMAGE" << 'REMOTE_SCRIPT'
-            set -e
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" << 'REMOTE_SCRIPT'
             DEPLOY_PATH="$1"
-            BACKEND_IMAGE="$2"
-            FRONTEND_IMAGE="$3"
             cd "$DEPLOY_PATH"
-            export BACKEND_IMAGE="$BACKEND_IMAGE"
-            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
             docker-compose -f docker-compose.prod.yml ps
-            docker-compose -f docker-compose.prod.yml logs --tail=30
           REMOTE_SCRIPT
 
       - name: Deployment info
