@@ -849,14 +849,21 @@ jobs:
           SERVER_USER: ${{ secrets.PRODUCTION_SERVER_USER || 'root' }}
           SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: |
           ssh -i "$SSH_KEY" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
-            DEPLOY_PATH="${{ secrets.PRODUCTION_DEPLOY_PATH || '/var/www/html' }}"
+            "$SERVER_USER@$SERVER_HOST" bash -s "$DEPLOY_PATH" "$BACKEND_IMAGE" "$FRONTEND_IMAGE" << 'REMOTE_SCRIPT'
+            set -e
+            DEPLOY_PATH="$1"
+            BACKEND_IMAGE="$2"
+            FRONTEND_IMAGE="$3"
             cd "$DEPLOY_PATH"
+            export BACKEND_IMAGE="$BACKEND_IMAGE"
+            export FRONTEND_IMAGE="$FRONTEND_IMAGE"
             docker-compose -f docker-compose.prod.yml ps
             docker-compose -f docker-compose.prod.yml logs --tail=30
           REMOTE_SCRIPT
