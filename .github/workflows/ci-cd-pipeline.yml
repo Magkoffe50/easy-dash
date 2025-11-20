@@ -901,17 +901,50 @@ jobs:
             done
             
             echo "Testing database connection with password from .env..."
-            if docker exec -e PGPASSWORD="$DB_PASSWORD" easy-dash-postgres-prod psql -U "$DB_USERNAME" -d "$DB_DATABASE" -c "SELECT 1;" > /dev/null 2>&1; then
+            echo "DB_USERNAME: $DB_USERNAME"
+            echo "DB_DATABASE: $DB_DATABASE"
+            echo "DB_PASSWORD length: ${#DB_PASSWORD}"
+            
+            CONNECTION_TEST=$(docker exec -e PGPASSWORD="$DB_PASSWORD" easy-dash-postgres-prod psql -U "$DB_USERNAME" -d "$DB_DATABASE" -c "SELECT 1;" 2>&1)
+            CONNECTION_STATUS=$?
+            
+            if [ $CONNECTION_STATUS -eq 0 ]; then
               echo "✅ Database connection successful with .env password"
             else
               echo "❌ Database connection failed with .env password"
+              echo "Connection test output:"
+              echo "$CONNECTION_TEST"
+              echo ""
               echo "This means DB_PASSWORD in .env doesn't match what postgres was initialized with"
-              echo "Postgres container environment:"
-              docker inspect easy-dash-postgres-prod | grep -A 5 "POSTGRES_PASSWORD" || echo "No POSTGRES_PASSWORD in container env"
+              echo ""
+              echo "Postgres container environment variables:"
+              docker inspect easy-dash-postgres-prod --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E "POSTGRES|DB" || echo "No POSTGRES variables found"
+              echo ""
+              echo "To fix this, you need to either:"
+              echo "1. Update .env DB_PASSWORD to match what postgres was initialized with, OR"
+              echo "2. Reset postgres volume (WARNING: deletes all data):"
+              echo "   docker-compose -f docker-compose.prod.yml down"
+              echo "   docker volume rm html_postgres_data"
+              echo "   docker-compose -f docker-compose.prod.yml up -d"
               exit 1
             fi
             
             sleep 5
+            
+            echo "Verifying backend container has correct environment variables..."
+            BACKEND_DB_PASSWORD=$(docker inspect easy-dash-backend-prod --format '{{range .Config.Env}}{{println .}}{{end}}' | grep "^DB_PASSWORD=" | cut -d'=' -f2 || echo "")
+            if [ -z "$BACKEND_DB_PASSWORD" ]; then
+              echo "❌ Backend container doesn't have DB_PASSWORD environment variable!"
+              docker inspect easy-dash-backend-prod --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E "DB_|POSTGRES" || echo "No DB variables found"
+              exit 1
+            fi
+            if [ "$BACKEND_DB_PASSWORD" != "$DB_PASSWORD" ]; then
+              echo "❌ Backend container DB_PASSWORD doesn't match .env file!"
+              echo "Backend has: ${BACKEND_DB_PASSWORD:0:5}... (length: ${#BACKEND_DB_PASSWORD})"
+              echo ".env has: ${DB_PASSWORD:0:5}... (length: ${#DB_PASSWORD})"
+              exit 1
+            fi
+            echo "✅ Backend container has correct DB_PASSWORD"
             
             for i in {1..20}; do
               RESTARTING=$(docker ps -a --filter "name=easy-dash" --filter "status=restarting" --format "{{.Names}}" | wc -l)
