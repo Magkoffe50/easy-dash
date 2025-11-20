@@ -129,26 +129,14 @@ jobs:
         working-directory: ./front
         run: |
           if [ ! -d "node_modules" ] || [ ! -d "node_modules/@babel/runtime" ]; then
-            echo "📥 Installing frontend dependencies..."
             npm install
-          else
-            echo "✅ Frontend dependencies found in cache"
           fi
 
       - name: Ensure backend dependencies
         working-directory: ./backend
         run: |
-          echo "Checking backend dependencies..."
-          ls -la node_modules 2>/dev/null | head -10 || echo "node_modules not found"
-          
           if [ ! -d "node_modules" ] || [ ! -d "node_modules/lodash" ]; then
-            echo "📥 Installing backend dependencies..."
             npm install
-            
-            echo "Verifying lodash installation..."
-            ls -la node_modules/lodash 2>/dev/null || echo "lodash still missing!"
-          else
-            echo "✅ Backend dependencies found in cache"
           fi
 
       - name: Build frontend
@@ -366,21 +354,10 @@ jobs:
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ env.SHORT_SHA }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -z "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ]; then
-            echo "❌ RENDER_BACKEND_SERVICE_ID is not set"
+          if [ -z "${{ secrets.RENDER_BACKEND_SERVICE_ID }}" ] || [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ Required secrets not set"
             exit 1
           fi
-          
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "❌ RENDER_API_KEY is not set"
-            exit 1
-          fi
-          
-          echo "🚀 Deploying backend to Render..."
-          echo "Service ID: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}"
-          echo "Image: $BACKEND_IMAGE"
-          
-          echo "Triggering deployment..."
           
           HTTP_CODE=$(curl -s -o /tmp/deploy_response.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
@@ -389,18 +366,12 @@ jobs:
             -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$BACKEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_BACKEND_SERVICE_ID }}/deploys)
           
-          echo "HTTP Response Code: $HTTP_CODE"
-          
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            DEPLOY_RESPONSE=$(cat /tmp/deploy_response.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(cat /tmp/deploy_response.json | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
-              echo "✅ Backend deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
               
-              echo ""
-              echo "⏳ Waiting for deployment to complete..."
               MAX_WAIT=600
               ELAPSED=0
               INTERVAL=15
@@ -416,33 +387,29 @@ jobs:
                 
                 case "$DEPLOY_STATUS" in
                   "live")
-                    echo "✅ Backend deployment successful!"
                     exit 0
                     ;;
                   "build_failed"|"update_failed"|"canceled"|"deactivated")
-                    echo "❌ Backend deployment failed with status: $DEPLOY_STATUS"
+                    echo "❌ Deployment failed: $DEPLOY_STATUS"
                     exit 1
                     ;;
                   "created"|"build_in_progress"|"update_in_progress")
-                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
                     ;;
                   *)
-                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
                     ;;
                 esac
               done
               
-              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              echo "⚠️ Deployment timeout"
               exit 1
             else
-              echo "⚠️ Response received but no deploy ID found"
-              echo "Response: $DEPLOY_RESPONSE"
+              echo "❌ No deploy ID in response"
               exit 1
             fi
           else
-            echo "❌ Failed to create backend deployment. HTTP Code: $HTTP_CODE"
+            echo "❌ Deployment failed. HTTP Code: $HTTP_CODE"
             if [ -f /tmp/deploy_response.json ]; then
-              echo "Response: $(cat /tmp/deploy_response.json)"
+              cat /tmp/deploy_response.json
             fi
             exit 1
           fi
@@ -454,21 +421,10 @@ jobs:
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ env.SHORT_SHA }}-staging
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -z "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ]; then
-            echo "❌ RENDER_FRONTEND_SERVICE_ID is not set"
+          if [ -z "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ] || [ -z "$RENDER_API_KEY" ]; then
+            echo "❌ Required secrets not set"
             exit 1
           fi
-          
-          if [ -z "$RENDER_API_KEY" ]; then
-            echo "❌ RENDER_API_KEY is not set"
-            exit 1
-          fi
-          
-          echo "🚀 Deploying frontend to Render..."
-          echo "Service ID: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}"
-          echo "Image: $FRONTEND_IMAGE"
-          
-          echo "Triggering deployment..."
           
           HTTP_CODE=$(curl -s -o /tmp/deploy_response_frontend.json -w "%{http_code}" -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
@@ -477,18 +433,12 @@ jobs:
             -d "{\"clearCache\":\"do_not_clear\",\"imageUrl\":\"$FRONTEND_IMAGE\"}" \
             https://api.render.com/v1/services/${{ secrets.RENDER_FRONTEND_SERVICE_ID }}/deploys)
           
-          echo "HTTP Response Code: $HTTP_CODE"
-          
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            DEPLOY_RESPONSE=$(cat /tmp/deploy_response_frontend.json)
-            DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+            DEPLOY_ID=$(cat /tmp/deploy_response_frontend.json | jq -r '.id // empty' 2>/dev/null || echo "")
             
             if [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ]; then
-              echo "✅ Frontend deployment initiated: $DEPLOY_ID"
               echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
               
-              echo ""
-              echo "⏳ Waiting for deployment to complete..."
               MAX_WAIT=600
               ELAPSED=0
               INTERVAL=15
@@ -504,33 +454,29 @@ jobs:
                 
                 case "$DEPLOY_STATUS" in
                   "live")
-                    echo "✅ Frontend deployment successful!"
                     exit 0
                     ;;
                   "build_failed"|"update_failed"|"canceled"|"deactivated")
-                    echo "❌ Frontend deployment failed with status: $DEPLOY_STATUS"
+                    echo "❌ Deployment failed: $DEPLOY_STATUS"
                     exit 1
                     ;;
                   "created"|"build_in_progress"|"update_in_progress")
-                    echo "⏳ Status: $DEPLOY_STATUS (${ELAPSED}s elapsed)"
                     ;;
                   *)
-                    echo "⚠️  Unknown status: $DEPLOY_STATUS"
                     ;;
                 esac
               done
               
-              echo "⚠️  Deployment timeout after ${MAX_WAIT}s. Please check Render dashboard."
+              echo "⚠️ Deployment timeout"
               exit 1
             else
-              echo "⚠️ Response received but no deploy ID found"
-              echo "Response: $DEPLOY_RESPONSE"
+              echo "❌ No deploy ID in response"
               exit 1
             fi
           else
-            echo "❌ Failed to create frontend deployment. HTTP Code: $HTTP_CODE"
+            echo "❌ Deployment failed. HTTP Code: $HTTP_CODE"
             if [ -f /tmp/deploy_response_frontend.json ]; then
-              echo "Response: $(cat /tmp/deploy_response_frontend.json)"
+              cat /tmp/deploy_response_frontend.json
             fi
             exit 1
           fi
@@ -562,25 +508,10 @@ jobs:
           
           if [ -n "$FRONTEND_URL" ]; then
             echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Frontend deployed: $FRONTEND_URL"
           elif [ -n "$BACKEND_URL" ]; then
             echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
-            echo "✅ Backend deployed: $BACKEND_URL"
           else
             echo "url=https://your-staging-url.onrender.com" >> $GITHUB_OUTPUT
-            echo "✅ Deployment pipeline completed!"
-          fi
-
-      - name: Notify deployment
-        if: success()
-        run: |
-          echo "✅ Successfully deployed to staging on Render!"
-          echo "🌐 Staging URL: ${{ steps.deploy-info.outputs.url }}"
-          if [ -n "${{ steps.render-urls.outputs.frontend_url }}" ]; then
-            echo "📱 Frontend: ${{ steps.render-urls.outputs.frontend_url }}"
-          fi
-          if [ -n "${{ steps.render-urls.outputs.backend_url }}" ]; then
-            echo "🔧 Backend: ${{ steps.render-urls.outputs.backend_url }}"
           fi
 
   deploy-production:
@@ -629,15 +560,11 @@ jobs:
           FIRST_LINE=$(head -n 1 ~/.ssh/deploy_key)
           KEY_TYPE=$(echo "$FIRST_LINE" | cut -d' ' -f1)
           
-          if [ "$KEY_TYPE" = "ssh-rsa" ] || [ "$KEY_TYPE" = "ssh-ed25519" ] || [ "$KEY_TYPE" = "ssh-dss" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp256" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp384" ] || [ "$KEY_TYPE" = "ecdsa-sha2-nistp521" ]; then
+          if [ "$KEY_TYPE" != "ssh-rsa" ] && [ "$KEY_TYPE" != "ssh-ed25519" ] && [ "$KEY_TYPE" != "ssh-dss" ] && [ "$KEY_TYPE" != "ecdsa-sha2-nistp256" ] && [ "$KEY_TYPE" != "ecdsa-sha2-nistp384" ] && [ "$KEY_TYPE" != "ecdsa-sha2-nistp521" ] && [ "$KEY_TYPE" != "-----BEGIN" ]; then
             exit 1
           fi
           
-          if [ "$KEY_TYPE" != "-----BEGIN" ]; then
-            exit 1
-          fi
-          
-          if ! grep -q "PRIVATE KEY" ~/.ssh/deploy_key; then
+          if [ "$KEY_TYPE" = "-----BEGIN" ] && ! grep -q "PRIVATE KEY" ~/.ssh/deploy_key; then
             exit 1
           fi
           
@@ -715,54 +642,23 @@ jobs:
             set -e
             DEPLOY_PATH="$1"
             
-            echo "Testing SSH connection and file access..."
-            
-            if [ ! -d "$DEPLOY_PATH" ]; then
-              echo "Directory $DEPLOY_PATH does not exist"
-              exit 1
-            fi
-            
-            if [ ! -w "$DEPLOY_PATH" ]; then
-              echo "Directory $DEPLOY_PATH is not writable"
+            if [ ! -d "$DEPLOY_PATH" ] || [ ! -w "$DEPLOY_PATH" ]; then
               exit 1
             fi
             
             cd "$DEPLOY_PATH"
             
             if [ -f .env ]; then
-              echo ".env file exists"
-              echo "Current .env file structure (keys only):"
-              grep -E "^[A-Z_]+=" .env | cut -d'=' -f1 | sort
-              
-              if [ -w .env ]; then
-                echo ".env file is writable"
-                
-                TEST_VAR="TEST_$(date +%s)"
-                echo "$TEST_VAR=test_value" >> .env
-                if grep -q "^$TEST_VAR=" .env; then
-                  sed -i "/^$TEST_VAR=/d" .env
-                  echo "Successfully wrote and removed test variable from .env"
-                else
-                  echo "Failed to write test variable to .env"
-            exit 1
-          fi
-              else
-                echo ".env file is NOT writable"
+              if [ ! -w .env ]; then
                 exit 1
               fi
             else
-              echo ".env file does not exist (will be created on first deployment)"
               touch .env
-              if [ -w .env ]; then
-                echo "Can create and write to .env file"
-                rm .env
-              else
-                echo "Cannot create .env file"
+              if [ ! -w .env ]; then
                 exit 1
               fi
+              rm .env
             fi
-            
-            echo "SSH connection and .env access verified successfully"
           REMOTE_SCRIPT
 
       - name: Configure Nginx
@@ -785,11 +681,11 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SERVER_USER@$SERVER_HOST" bash << 'REMOTE_SCRIPT'
             set -e
-              rm -f /etc/nginx/sites-enabled/default
+            rm -f /etc/nginx/sites-enabled/default
             mv /tmp/easy-dash-nginx.conf /etc/nginx/sites-available/easy-dash.dev
             ln -sf /etc/nginx/sites-available/easy-dash.dev /etc/nginx/sites-enabled/easy-dash.dev
             nginx -t
-              systemctl reload nginx || systemctl restart nginx
+            systemctl reload nginx || systemctl restart nginx
           REMOTE_SCRIPT
 
       - name: Login to GitHub Container Registry
