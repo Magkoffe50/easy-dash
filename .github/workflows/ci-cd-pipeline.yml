@@ -799,7 +799,7 @@ jobs:
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SERVER_USER@$SERVER_HOST" bash << REMOTE_SCRIPT
+            "$SERVER_USER@$SERVER_HOST" "bash -s" << REMOTE_SCRIPT
             set -e
             DEPLOY_PATH="$DEPLOY_PATH"
             eval "DB_PASSWORD_ENV=$DB_PASSWORD_ESC"
@@ -808,10 +808,10 @@ jobs:
             echo "🔍 Debug: DB_PASSWORD_ENV is set: \$([ -n \"\$DB_PASSWORD_ENV\" ] && echo 'yes' || echo 'no')"
             echo "🔍 Debug: JWT_SECRET_ENV is set: \$([ -n \"\$JWT_SECRET_ENV\" ] && echo 'yes' || echo 'no')"
             
-            echo "Creating directory: $DEPLOY_PATH"
-            mkdir -p "$DEPLOY_PATH"
-            cd "$DEPLOY_PATH"
-            echo "Current directory: $(pwd)"
+            echo "Creating directory: \$DEPLOY_PATH"
+            mkdir -p "\$DEPLOY_PATH"
+            cd "\$DEPLOY_PATH"
+            echo "Current directory: \$(pwd)"
             echo "Directory contents before:"
             ls -la || echo "Directory is empty or listing failed"
             
@@ -854,7 +854,7 @@ jobs:
                 sed -i '/^DB_PASSWORD=/d' .env
                 printf 'DB_PASSWORD=%s\n' "\$DB_PASSWORD_ENV" >> .env
                 echo "✅ DB_PASSWORD updated"
-                echo "🔍 New .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env)"
+                echo "🔍 New .env DB_PASSWORD line: \$(grep '^DB_PASSWORD=' .env | head -1)"
               else
                 echo "⚠️  DB_PASSWORD secret not provided, keeping existing value"
               fi
@@ -865,7 +865,7 @@ jobs:
                 sed -i '/^JWT_SECRET=/d' .env
                 printf 'JWT_SECRET=%s\n' "\$JWT_SECRET_ENV" >> .env
                 echo "✅ JWT_SECRET updated"
-                echo "🔍 New .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env)"
+                echo "🔍 New .env JWT_SECRET line: \$(grep '^JWT_SECRET=' .env | head -1)"
               else
                 echo "⚠️  JWT_SECRET secret not provided, keeping existing value"
               fi
