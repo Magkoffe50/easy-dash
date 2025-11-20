@@ -586,8 +586,8 @@ jobs:
   deploy-production:
     name: Deploy to Production (DigitalOcean)
     runs-on: ubuntu-latest
-    # needs: [vendors, build]
-    # if: ${{ always() && needs.vendors.result == 'success' && needs.build.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
+    needs: [vendors, build]
+    if: ${{ always() && needs.vendors.result == 'success' && needs.build.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.environment == 'production' }}
     environment:
       name: production
       url: https://easy-dash.dev
