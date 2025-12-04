@@ -6,6 +6,7 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import { getCorsConfig } from './config/cors.config';
 import { initSwagger } from './config/swagger.config';
+import { getApiPrefix } from './config/api-prefix.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 const envFile =
@@ -15,20 +16,20 @@ const envFile =
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const apiPrefix = process.env.API_PREFIX || 'api';
   const port = process.env.PORT || 3001;
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-  // Set global prefix to 'api' for both staging and production
-  // This ensures consistent API routes: /api/auth/*, /api/users/*, etc.
-  // Can be overridden with API_PREFIX env var if needed (e.g., API_PREFIX="" to disable)
+  const apiPrefix = getApiPrefix();
 
   // const uploadsPath = path.join(process.cwd(), 'uploads');
   // app.useStaticAssets(uploadsPath, {
   //   prefix: '/uploads',
   // });
-  // app.setGlobalPrefix(apiPrefix);
+
+  if (apiPrefix) {
+    app.setGlobalPrefix(apiPrefix);
+  }
   app.enableCors(getCorsConfig());
   app.use(cookieParser());
   app.useGlobalPipes(
