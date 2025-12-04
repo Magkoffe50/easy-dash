@@ -6,10 +6,6 @@ export class CreateNoteDto {
   @IsString()
   title: string;
 
-  @ApiProperty({ description: 'Note description' })
-  @IsString()
-  description: string;
-
   @ApiProperty({ description: 'Note content', required: false })
   @IsOptional()
   @IsString()
@@ -26,4 +22,3 @@ export class CreateNoteDto {
   @IsString({ each: true })
   tags?: string[];
 }
-

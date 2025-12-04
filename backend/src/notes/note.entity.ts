@@ -17,9 +17,6 @@ export class Note {
   @Column()
   title: string;
 
-  @Column('text')
-  description: string;
-
   @Column('text', { nullable: true })
   content?: string;
 
@@ -47,4 +44,3 @@ export class Note {
     this.lastUpdated = new Date();
   }
 }
-

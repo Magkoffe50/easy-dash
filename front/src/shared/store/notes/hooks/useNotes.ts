@@ -1,17 +1,19 @@
 import { useCallback, useMemo, useEffect } from 'react';
 import { useNotesStore } from '../notesStore';
-import { useUserStore } from '../../user/userStore';
 import { api } from '@/shared/api';
 import { Note, NoteCreatePayload, NoteUpdatePayload } from '@/entities/note';
 import useNotifications from '../../notifications/hooks/useNotifications';
 import { buildNotesQueryString } from '../utils/notesQueryHelpers';
 import type { SortOption, NotesQueryParams } from '../types';
+import { useAuthStore } from '../../auth/authStore';
+import { useUserStore } from '../../user/userStore';
 
 export type { SortOption, NotesQueryParams };
 
 export const useNotes = (queryParams?: NotesQueryParams) => {
   const notesStore = useNotesStore();
   const userId = useUserStore((state) => state.user?.id);
+  const { isAuthenticated } = useAuthStore();
   const { showError, showSuccess } = useNotifications();
 
   const fetchNotes = useCallback(async () => {
@@ -34,10 +36,10 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
   }, [notesStore, showError, queryParams]);
 
   useEffect(() => {
-    if (userId) {
+    if (isAuthenticated) {
       fetchNotes();
     }
-  }, [userId]);
+  }, [isAuthenticated]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();

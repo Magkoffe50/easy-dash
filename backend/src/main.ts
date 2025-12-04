@@ -28,7 +28,7 @@ async function bootstrap() {
   // app.useStaticAssets(uploadsPath, {
   //   prefix: '/uploads',
   // });
-  app.setGlobalPrefix(apiPrefix);
+  // app.setGlobalPrefix(apiPrefix);
   app.enableCors(getCorsConfig());
   app.use(cookieParser());
   app.useGlobalPipes(

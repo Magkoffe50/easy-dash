@@ -45,8 +45,8 @@ export class NotesService {
     userId: string,
     createNoteDto: CreateNoteDto,
   ): Promise<Note> {
-    if (!createNoteDto.title || !createNoteDto.description) {
-      throw new BadRequestException('Title and description are required');
+    if (!createNoteDto.title) {
+      throw new BadRequestException('Title is required');
     }
 
     await this.usersService.findOne(userId);
