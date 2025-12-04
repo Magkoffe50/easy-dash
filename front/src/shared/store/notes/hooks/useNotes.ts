@@ -51,7 +51,7 @@ export const useNotes = (queryParams?: NotesQueryParams) => {
 
   const createNote = useCallback(
     async (payload: NoteCreatePayload): Promise<Note | null> => {
-      if (!payload.title || !payload.description) {
+      if (!payload.title) {
         showError('Please fill in title and description');
         return null;
       }

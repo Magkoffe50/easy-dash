@@ -76,7 +76,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     const markdownContent = editor.getMarkdown();
     const payload: NoteCreatePayload = {
       title,
-      description: markdownContent.substring(0, 200) || '',
       content: markdownContent,
       tags: initialData?.tags || [],
     };
