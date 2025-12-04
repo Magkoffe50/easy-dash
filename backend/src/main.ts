@@ -20,12 +20,12 @@ async function bootstrap() {
 
   dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-  const apiPrefix = getApiPrefix();
-
   // const uploadsPath = path.join(process.cwd(), 'uploads');
   // app.useStaticAssets(uploadsPath, {
   //   prefix: '/uploads',
   // });
+
+  const apiPrefix = getApiPrefix();
 
   if (apiPrefix) {
     app.setGlobalPrefix(apiPrefix);

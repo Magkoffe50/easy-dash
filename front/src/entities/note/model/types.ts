@@ -12,7 +12,6 @@ export interface Note {
 
 export interface NoteCreatePayload {
   title: string;
-  description: string;
   content?: string;
   type?: string;
   tags?: string[];

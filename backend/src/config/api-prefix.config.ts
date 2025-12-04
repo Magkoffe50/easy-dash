@@ -6,6 +6,6 @@ export function getApiPrefix(): string {
     return explicitPrefix;
   }
 
-  const isProduction = nodeEnv === 'production' || nodeEnv === 'staging';
+  const isProduction = nodeEnv === 'production';
   return isProduction ? 'api' : '';
 }
