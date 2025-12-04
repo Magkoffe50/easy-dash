@@ -8,7 +8,14 @@ const nodeEnv = process.env.NODE_ENV || 'development';
 const envFile =
   nodeEnv === 'production' ? '.env.production' : '.env.development';
 
-config({ path: path.resolve(__dirname, '../../', envFile) });
+const envFilePath = path.resolve(__dirname, '../../', envFile);
+try {
+  config({ path: envFilePath });
+} catch {
+  console.warn(
+    `Could not load env file from ${envFilePath}, using environment variables`,
+  );
+}
 
 const configService = new ConfigService();
 

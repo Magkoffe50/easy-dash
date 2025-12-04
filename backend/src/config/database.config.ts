@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 
 const LOCAL_DOCKER_HOSTS = ['postgres', 'localhost', '127.0.0.1'];
 const ENTITIES_PATH = __dirname + '/../**/*.entity{.ts,.js}';
-const MIGRATIONS_PATH = __dirname + '/../migrations/**/*{.ts,.js}';
 
 const isLocalDockerHost = (host: string): boolean => {
   return LOCAL_DOCKER_HOSTS.includes(host);
@@ -36,7 +35,6 @@ const getCommonTypeOrmOptions = (
   return {
     type: 'postgres' as const,
     entities: [ENTITIES_PATH],
-    migrations: [MIGRATIONS_PATH],
     synchronize: false,
     logging: nodeEnv === 'development',
     ssl,
