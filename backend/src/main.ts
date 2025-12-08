@@ -16,7 +16,6 @@ const envFile =
 
 async function bootstrap() {
   dotenv.config({ path: path.resolve(__dirname, envFile) });
-
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = process.env.PORT || 3001;
 
