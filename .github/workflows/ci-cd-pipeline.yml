@@ -197,7 +197,7 @@ jobs:
           tags: ${{ steps.meta-frontend-staging.outputs.tags }}
           labels: ${{ steps.meta-frontend-staging.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL_STAGING || 'https://backend-latest-efmo.onrender.com/api' }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL_STAGING || 'https://backend-latest-efmo.onrender.com' }}
             NEXT_PUBLIC_APP_ENV=staging
           cache-from: type=gha
           cache-to: type=gha,mode=max

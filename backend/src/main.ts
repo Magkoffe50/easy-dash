@@ -15,10 +15,10 @@ const envFile =
     : '.env.development';
 
 async function bootstrap() {
+  dotenv.config({ path: path.resolve(__dirname, envFile) });
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = process.env.PORT || 3001;
-
-  dotenv.config({ path: path.resolve(__dirname, envFile) });
 
   // const uploadsPath = path.join(process.cwd(), 'uploads');
   // app.useStaticAssets(uploadsPath, {
@@ -40,7 +40,7 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerPath = initSwagger(app, apiPrefix);
+  const swaggerPath = initSwagger(app, apiPrefix || 'api');
 
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
