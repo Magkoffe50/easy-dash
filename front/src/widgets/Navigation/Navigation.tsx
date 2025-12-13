@@ -37,12 +37,14 @@ interface NavigationProps {
   isAuthenticated?: boolean;
   user?: User;
   onLogout?: () => void;
+  onMenuToggle?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   isAuthenticated = false,
   user,
   onLogout,
+  onMenuToggle,
 }) => {
   const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -54,10 +56,6 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const displayName = getUserDisplayName(user);
 
-  const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  }, []);
-
   const handleClose = useCallback(() => setAnchorEl(null), []);
 
   const handleLogout = useCallback(() => {
@@ -68,7 +66,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <Box
       sx={{
-        width: { xs: '100vw', md: 240 },
+        width: { xs: '100vw', sm: 240 },
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -150,6 +148,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 component={Link}
                 href={route.path}
                 selected={isSelected}
+                onClick={onMenuToggle}
                 sx={{
                   borderRadius: 1,
                   mx: 1,
@@ -201,6 +200,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               startIcon={<AddIcon />}
               component={Link}
               href="/notes/create"
+              onClick={onMenuToggle}
               sx={{
                 textTransform: 'none',
                 py: 1.5,
@@ -236,8 +236,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
             {user && (
               <>
-                <IconButton
-                  onClick={handleMenuOpen}
+                <Box
                   sx={{
                     width: '100%',
                     justifyContent: 'flex-start',
@@ -249,7 +248,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   <Typography variant="body2" sx={{ ml: 2 }}>
                     Account
                   </Typography>
-                </IconButton>
+                </Box>
                 <Menu
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}

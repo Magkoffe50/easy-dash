@@ -10,6 +10,7 @@ interface SidebarProps {
   isAuthenticated: boolean;
   user?: User;
   onLogout: () => void;
+  onMenuToggle: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isAuthenticated,
   user,
   onLogout,
+  onMenuToggle,
 }) => (
   <Box
     component="aside"
@@ -26,18 +28,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       borderRight: '1px solid',
       borderColor: 'divider',
       minWidth: 0,
-      position: { xs: 'fixed', md: 'relative' },
-      top: { xs: `${theme.mixins.toolbar.minHeight}px`, md: 'auto' },
-      left: { xs: 0, md: 'auto' },
+      position: { xs: 'fixed', sm: 'relative' },
+      top: { xs: `${theme.mixins.toolbar.minHeight}px`, sm: 'auto' },
+      left: { xs: 0, sm: 'auto' },
       height: {
         xs: `calc(100vh - ${theme.mixins.toolbar.minHeight}px)`,
-        md: 'auto',
+        sm: 'auto',
       },
       width: {
         xs: isOpen ? '100vw' : 0,
-        md: isOpen ? 240 : 0,
+        sm: isOpen ? 240 : 0,
       },
-      zIndex: { xs: 1300, md: 'auto' },
+      zIndex: { xs: 1300, sm: 'auto' },
       backgroundColor:
         theme.palette.mode === 'dark'
           ? theme.palette.grey[900]
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   >
     <Navigation
       isAuthenticated={isAuthenticated}
+      onMenuToggle={onMenuToggle}
       user={user}
       onLogout={onLogout}
     />

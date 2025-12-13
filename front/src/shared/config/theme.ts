@@ -1,5 +1,7 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
+export const MUI_SM_BREAKPOINT = 600;
+
 const baseTheme: ThemeOptions = {
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -32,6 +34,10 @@ const baseTheme: ThemeOptions = {
     borderRadius: 12,
   },
   spacing: 8,
+  // breakpoints:{
+  //   xs:480,
+  //   md:
+  // }
 };
 
 export const lightTheme = createTheme({
